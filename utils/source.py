@@ -9,7 +9,7 @@ from .cli_provider import cli
 from .error import report
 from .events import report as report_event
 from .file_pool import pool
-from .version import Version, is_valid
+from .version import Version, is_valid, VersionRangeRequirement
 
 FOLDER = pool.open("data/config.json").json["sources_folder"]
 
@@ -84,8 +84,16 @@ class Source:
                     if not Version(source_info["previous_version"]).matches(
                             newest):  # Dependency version increment detected
                         report_event("Source class", "Version increment for " + source + " detected!")
+                        cli.success("Detected version increment for " + source + "!", vanish=True)
+                        # Requirements get read afterwards, change them now
                         software_file = pool.open("data/software.json")
-                        software_file.json[source]["version"] = newest.string()
+                        requirements = VersionRangeRequirement(software_file.json[source]["requirements"])
+                        if requirements.minimum == requirements.maximum:  # Only supports one version, very likely requires version match
+                            requirements.minimum = newest
+                        # TODO: Add way to customize increment behaviour
+                        requirements.maximum = newest
+                        software_file.json[source]["requirements"] = requirements.dict()
+                        sources[source]["previous_version"] = newest.string()
                 else:
                     sources[source]["previous_version"] = newest.string()
                 self.version = newest
