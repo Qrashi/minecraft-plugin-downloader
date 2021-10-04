@@ -1,0 +1,43 @@
+import datetime
+
+from requests import get
+
+from utils.URLAccessField import URLAccessField
+from .cli_provider import cli
+from .error import report
+from .events import report as report_event
+from .file_pool import pool
+from .version import Version
+
+if __name__ == "__main__":
+    print("Blas mir die huf auf")
+
+DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
+
+if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > pool.open("data/config.json").json[
+    "version_check_interval"]:
+    current_version = Version(pool.open("data/versions.json").json["current_version"])
+    url_access_field = URLAccessField(pool.open("data/config.json").json["newest_game_version"])
+    cli.load("Checking for new version...", vanish=True)
+    try:
+        response = get(url_access_field.url).json()
+        versions = url_access_field.access(response)
+        versions_json = pool.open("data/versions.json")
+        versions_json.json["versions"] = []
+        remote = current_version
+        for version in versions:
+            version = Version(version)
+            versions_json.json["versions"].append(version.string())
+            if version.is_higher(remote):
+                remote = version
+    except Exception as e:
+        report("Could not fetch newest game version:", 3, "Error while executing get request and decoding data.",
+               exception=e)
+        remote = current_version
+    if current_version.matches(remote):
+        pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
+    else:
+        pool.open("data/versions.json").json["current_version"] = remote.string()
+        pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
+        report_event("Game version checker", "The game version was updated to " + remote.string())
+        cli.success("Fetched new minecraft version: " + remote.string())

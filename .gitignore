@@ -1,0 +1,9 @@
+venv/
+software/
+data/archive/
+tests/
+data/errors.json
+data/events.json
+data/servers.json
+data/software.json
+data/sources.json
