@@ -10,7 +10,7 @@ class URLAccessField:
             self.url = field["URL"]
             self.access_field = field["access"]
 
-    def access(self, json: dict) -> dict:
+    def access(self, json: dict):
         """
         Accesses a dict according to the URLAccessField rules.
         :param json: The json to access
@@ -20,5 +20,5 @@ class URLAccessField:
             return json
         access = json
         for to_access in self.access_field:
-            access = json[to_access]
+            access = access[to_access]
         return access

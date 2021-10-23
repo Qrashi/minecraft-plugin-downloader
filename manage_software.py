@@ -66,8 +66,8 @@ def remove(file: str):
     sources_file = pool.open("data/sources.json")
     all_software = software_file.json
 
-    cli.success("Removing " + file + " from the software repository...")
     cli.updateSender("RM")
+    cli.success("Removing " + file + " from the software repository...")
 
     name = ""
     software_info = {}
@@ -76,20 +76,23 @@ def remove(file: str):
             software_info = software
             break
 
-    rm_files = cli.ask("Would you like do delete all registered occurances of this dependency? ") in ["y", "yes"]
-
+    rm_files = cli.ask("Would you like do delete all registered occurrences of this dependency? (Copies of the "
+                       "dependency in a server) ") in ["y", "yes"]
+    print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+    cli.updateSender("SUM")
+    cli.info("Summary")
     cli.say("To remove: ")
     cli.say(
-        "Adding new dependency: " + software_info["identifier"] + " (" + name + ") [" + str(
+        "dependency " + software_info["identifier"] + " (" + name + ") [" + str(
             software_info["severity"]) + "]")
     cli.say("local file: " + file)
     cli.say("Version requirements: " + VersionRangeRequirement(software_info["requirements"]).string())
     if name in sources_file.json:
-        cli.say(name + " auto-update configuration")
+        cli.say(name + "'s auto-update configuration")
     if rm_files:
-        cli.say("ALL LOCAL COPIED DEPENDENCIES")
+        cli.say("ALL LOCAL COPIED DEPENDENCIES (in all servers!)")
 
-    if cli.ask("Are you sure? (yes / no) ").lower() not in ["y", "yes"]:
+    if cli.ask("Please confirm operation: (yes / no) ").lower() not in ["y", "yes"]:
         cli.fail("Aborting")
         exit()
 
@@ -107,12 +110,13 @@ def remove(file: str):
         for server in servers_rm:
             servers[server]["software"].pop(name)
         servers_file.json = servers
+        cli.info("Deleted ALL files and ALL occurrences in server configurations!")
 
     sources_file.json.pop(name)
     all_software.pop(name)
     software_file.json = all_software
 
-    cli.success("Software removed!")
+    cli.info("Software configurations removed!")
     pool.sync()
 
 
@@ -120,8 +124,8 @@ def add(file: str):
     software_file = pool.open("data/software.json")
     all_software = software_file.json
 
+    cli.updateSender("ADD")
     cli.success("Adding " + file + " to the software repository...")  # Doesn't actually do something
-    cli.updateSender("GEN")
 
     def ask():
         result = cli.ask("Please enter the name of the software (e.g waterfall): ", vanish=True)
@@ -132,7 +136,7 @@ def add(file: str):
 
     name = ask()
 
-    identifier = cli.ask("Please enter a \"description\" for your software (e.g Proxy / Waterfall): ", vanish=True)
+    identifier = cli.ask("Please enter a human understandable identifier for your software (e.g Proxy / Waterfall): ", vanish=True)
 
     def ask():
         result = cli.ask("How severe would any error related to this software be? (0-10): ", vanish=True)
@@ -160,7 +164,8 @@ def add(file: str):
     maximum = ask("newest compatible")
     range_requirement = VersionRangeRequirement((minimum, maximum))
 
-    cli.info("If you would like to add auto-update, please read trough the documentation and edit sources.json")
+    print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+    cli.info("If you would like to add auto-update, please read \"auto_update.md\"!")
 
     cli.success("All data collected!")
     cli.say("To add: ")
@@ -189,6 +194,7 @@ def add(file: str):
 
     software_file.json = all_software
     pool.sync()
+    cli.info("If you would like to add auto-update, please read \"auto_update.md\"!")
 
 
 if __name__ != "__main__":

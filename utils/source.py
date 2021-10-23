@@ -41,71 +41,80 @@ class Source:
 
             return replace
 
-        if "newest" in source_info:
-            if is_valid(source_info["newest"]):
-                newest_version = Version(source_info["newest"])
-                self.version = newest_version
-                self.newest_replacer = generate_replace(self.version)
+        if "compatibility" in source_info:
+            access = URLAccessField(self.config["compatibility"]["remote"])
+            try:
+                response = get(access.url)  # Replace all placeholders in the string and then
+            except Exception as e:  # Error while fetching
+                report("version check -" + source, self.severity,
+                       "Could not fetch latest version information!",
+                       additional="Last update: " + self.last_check, exception=e)
+                cli.fail("Could not retrieve newest version for " + self.source + ":")
+                print(e)
+                self.newest_replacer = generate_replace(Version(pool.open("data/versions.json").json["current_version"]))
+                return
+
+            if response.status_code != 200:  # Server side error
+                report("download -" + source, self.severity,
+                       "Error while fetching latest build information: Status code " + str(response.status_code),
+                       additional="Last update: " + self.last_check)
+                cli.fail("Could not retrieve newest version for " + self.source + " - status code " + str(
+                    response.status_code))
+                self.newest_replacer = generate_replace(Version(pool.open("data/versions.json").json["current_version"]))
+                return
+
+            field = access.access(response.json())
+            if type(field) == str:
+                newest = Version(field)
+                if source_info["compatibility"]["behaviour"].endswith("max"):
+                    compatibility = VersionRangeRequirement((newest, Version((newest.major, "99"))))
+                else:
+                    compatibility = VersionRangeRequirement((newest, newest))
+            elif type(field) == list:
+                if len(field) == 0:
+                    report("Compatibility checker", self.severity, self.source + " has NO compatibilities (list is empty) (" + str(field) + ")", additional=self.last_check)
+                    cli.fail("Could not fetch compatibility for " + self.source + " - no compatibilities found!")
+                    self.newest_replacer = generate_replace(Version(pool.open("data/versions.json").json["current_version"]))
+
+                # Retrieve newest and oldest version
+                newest = Version("1.0")
+                for version in field:
+                    version_obj = Version(version)
+                    if version_obj.is_higher(newest                 ):
+                        newest = version_obj
+                # Retrieve lowest
+                lowest = newest
+                for version in field:
+                    version_obj = Version(version)
+                    if version_obj.is_lower(lowest):
+                        lowest = version_obj
+                maxed_newest = newest
+                if source_info["compatibility"]["behaviour"].endswith("|max"):
+                    maxed_newest = Version((newest.major, "99"))
+                if source_info["compatibility"]["behaviour"].startswith("max|"):
+                    compatibility = VersionRangeRequirement((lowest, maxed_newest))
+                else:
+                    compatibility = VersionRangeRequirement((newest, maxed_newest))
             else:
-                url_access_field = URLAccessField(self.config["newest"])
-                try:
-                    response = get(url_access_field.url)  # Replace all placeholders in the string and then
-                except Exception as e:  # Error while fetching
-                    report("version check -" + source, self.severity,
-                           "Could not fetch latest version information!",
-                           additional="Last update: " + self.last_check, exception=e)
-                    cli.fail("Could not retrieve newest version for " + self.source + ":")
-                    print(e)
-                    self.version = Version(pool.open("data/versions.json").json["current_version"])
-                    self.newest_replacer = generate_replace(self.version)
-                    return
+                report("Compatibility checker", self.severity, "Compatibility is not of type array or string! type: " + str(field), additional=self.last_check)
+                cli.fail("Could not fetch compatibility for " + self.source + " - no list of compatibilities or compatibility found!")
+                self.newest_replacer = generate_replace(Version(pool.open("data/versions.json").json["current_version"]))
+                return
 
-                if response.status_code != 200:  # Server side error
-                    report("download -" + source, self.severity,
-                           "Error while fetching latest build information: Status code " + str(response.status_code),
-                           additional="Last update: " + self.last_check)
-                    cli.fail("Could not retrieve newest version for " + self.source + " - status code " + str(
-                        response.status_code))
-                    self.version = Version(pool.open("data/versions.json").json["current_version"])
-                    self.newest_replacer = generate_replace(self.version)
-                    return
+            previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
+            if not previous_compatibility.matches(compatibility):
+                all_software[self.source]["requirements"] = compatibility.dict()
+                cli.success("Detected version increment for " + source + "!")
+                report_event("Compatibility checker", "Compatibility for " + source + " has been changed to " + compatibility.string() + "!")
 
-                field = url_access_field.access(response.json())
-                if type(field) == str:
-                    newest = Version(field)
-                else:
-                    newest = Version("1.0")
-                    for version in field:
-                        version_obj = Version(version)
-                        if newest.is_lower(version_obj):
-                            newest = version_obj
-
-                if "previous_version" in source_info:
-                    if not Version(source_info["previous_version"]).matches(
-                            newest):  # Dependency version increment detected
-                        report_event("Source class", "Version increment for " + source + " detected!")
-                        cli.success("Detected version increment for " + source + "!", vanish=True)
-                        # Requirements get read afterwards, change them now
-                        software_file = pool.open("data/software.json")
-                        requirements = VersionRangeRequirement(software_file.json[source]["requirements"])
-                        if requirements.minimum == requirements.maximum:  # Only supports one version, very likely requires version match
-                            requirements.minimum = newest
-                        # TODO: Add way to customize increment behaviour
-                        requirements.maximum = newest
-                        software_file.json[source]["requirements"] = requirements.dict()
-                        sources[source]["previous_version"] = newest.string()
-                else:
-                    sources[source]["previous_version"] = newest.string()
-                self.version = newest
-                self.newest_replacer = generate_replace(self.version)
+            self.newest_replacer = generate_replace(newest)
 
         else:
             # Just use newest game version
             newest_version = Version(pool.open("data/versions.json").json["current_version"])
-            self.version = newest_version
-            self.newest_replacer = generate_replace(self.version)
+            self.newest_replacer = generate_replace(Version(pool.open("data/versions.json").json["current_version"]))
 
-    def get_newest_build(self):
+    def get_newest_build(self) -> int:
         url_field = URLAccessField(self.config["build"]["remote"])
         try:
             response = get(self.newest_replacer(url_field.url))  # Replace all placeholders in the string and then
@@ -127,26 +136,37 @@ class Source:
             return self.config["build"]["local"]
 
         field = url_field.access(response.json())
-        if type(field) == str:
+
+        def _int(string_to_int, throw_error=False) -> int:
+            if type(string_to_int) == int:
+                return int(string_to_int)
+            if string_to_int.isdigit():
+                return int(string_to_int)
+            elif throw_error:
+                report("fetching builds - " + self.source, self.severity, "Expected field of type str, got " + str(string_to_int), additional=self.last_check)
+                cli.fail("Could not fetch latest build information, expected string, got " + str(string_to_int))
+                return self.config["build"]["local"]
+                # Wont download newer version if the newer build is the local build
+            else:
+                return self.config["build"]["local"]
+                # Wont download newer version if the max build is the local build
+
+        if type(field) == str or type(field) == int:
             pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
-            return field  # Response is just newest version string
-        else:
-            current = self.config["build"]["local"]
+            return _int(field, throw_error=True)
+        elif type(field) == list:
+            # List of builds
+            if len(field) == 0:
+                # No builds!
+                cli.fail("Could not fetch latest build for " + self.source + ", there are no builds (list of builds is empty)")
+                report("download - " + self.source, self.severity, "List of builds is EMPTY (" + str(field), additional=self.last_check)
+            if len(field) == 1:
+                return _int(field[0], throw_error=True)
+            builds = []
             for build in field:
-                if type(build) == str:
-                    if build.isdigit():
-                        build = int(build)
-                    else:
-                        report("fetching newest build data", 1,
-                               "Could not convert build ID " + build + " to comparable string!",
-                               additional="Source: " + self.source)
-                        build = current
-                if current < build:
-                    current = build  #
-            pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
-                "%m.%d %H:%M")
-            return current
+                builds.append(_int(build))
+            return max(builds)
 
     def download_build(self, build: int) -> bool:
         """
@@ -154,8 +174,34 @@ class Source:
         :param build: success
         :return:
         """
+
+        if "name" in self.config["build"]:
+            # Fetch of name required before build download
+            access = URLAccessField(self.config["build"]["name"])
+            try:
+                response = get((self.newest_replacer(access.url)).replace("%build%", str(build)))
+            except Exception as e:
+                cli.fail("Could not fetch artifact name for build " + str(build) + " of " + self.source + " error while initiating connection")
+                report("download - " + self.source, self.severity, "Exception while fetching artifact name!", additional="Last update: " + self.last_check, exception=e)
+                return False
+            if response.status_code != 200:
+                cli.fail("Could not fetch artifact name for build " + str(build) + " of " + self.source + " status code " + str(response.status_code))
+                report("download - " + self.source, self.severity, "Exception while fetching artifact name - code " + str(response.status_code),
+                       additional="Last update: " + self.last_check)
+                return False
+            try:
+                artifact = access.access(response.json())
+            except Exception as e:
+                cli.fail("Error while retrieving artifact name for build " + str(build) + " of " + self.source + "!")
+                report("download - " + self.source, self.severity,
+                       "Exception while accessing json!",
+                       additional="Last update: " + self.last_check, exception=e)
+                return False
+        else:
+            artifact = ""
+
         try:
-            response = get((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build)),
+            response = get(((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build))).replace("%artifact%", artifact),
                            stream=True)
         except Exception as e:
             cli.fail("Could not start download of " + self.source + " - aborting")
@@ -223,6 +269,6 @@ class Source:
 
     def update(self):
         newest_build = self.get_newest_build()
-        if newest_build != self.config["build"]["local"]:
+        if newest_build > self.config["build"]["local"]:
             if self.download_build(newest_build):
                 pool.open("data/sources.json").json[self.source]["build"]["local"] = newest_build

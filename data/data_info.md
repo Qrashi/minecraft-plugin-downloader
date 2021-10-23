@@ -138,9 +138,6 @@ software: {
 N       min: Oldest supoported version
 N       max: Newest supported version
     }
-    version: The latest downloaded version (if the plugin has been built against a specific version)
-    This is required when the software has a source and is tagged renewable (newest key in sources.json)
-    If there is no "newest" field in the sources json, this will get used instead 
 }
 ```
 
@@ -153,27 +150,25 @@ sources.json: {name: source, name: source, name: source, ...}
 
 source: {
     server: The name of the API / server to download from in text (e.g: "paper API")
-N   newest: {
-PN      remote: The URL to download information on the latest version (see example)
-PN      acess: The json field to access (remove key for no field)
-
-N           EXAMPLE:
-N           remote: https://papermc.io/api/v2/projects/waterfall/
-N           This gives a json object with a property called "versions"       
-N           acess: versions
-N           Will tell the programm to acess the versions field.
-
-N           The data from these sites will be compared and the highest avialible version will be picked.
-N           You may use %newest_major% or %newest_minor% in future URLS.
-N           If the remote version is higher than the local version, the plugin requirement and version will be updated.
-N   }
-N   previous_version: The version that was detected on the previous run / used to display "update" messages.
+N   compatibility:
+        remote: URLAccess field to an array of (compatible) versions
+        behaviour: How to handle this array
+            "all|precise": All versions in this array are compatible with the software ("1.6 - 1.8") ALERT: Wont include higher 1.8 versions
+            "max|precise": Only the newest version is compatible with the software (only uses "1.17 - 1.17") 
+            "all|max": All versions and minor versions of maximum version are compatible (would convert "1.6 - 1.8" to "1.6 - 1.8.99")
+            "max|max": All minor versions for the maximum maor versions are compatible (converts "1.17 - 1.17" to "1.17 - 1.17.99")
     build: {
-PA      download: The URL to download a specific version from
-P           You may use %build% for the newest build number.
-P           You may use %newest_version% for the newest detected compatible version
-        local: The local build ID
-P       remote: The URL to download build information from.
+A       download: The URL to download a specific version from
+            You may use %build% for the newest build number.
+            You may use %newest_version% for the newest detected compatible version
+            If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
+            You may use %artifact% for the artifact name.
+        local: The local build ID AS AN INTEGER!
+N       name: The URL to fetch the artifact name
+            You may use %build% for the newest build number.
+            You may use %newest_version% for the newest detected compatible version
+            If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
+        remote: The URL to download build information from.
     }
    last_checked: The last time the sourcce has been checked
 }
@@ -182,9 +177,6 @@ P       remote: The URL to download build information from.
 ## REPLACING
 
 ### config.json
-
-Static information, this file also stores values that can be replaced <br>
-fields marked with a ```P``` at the start of the line.
 
 ```
 config.json: {
@@ -201,11 +193,12 @@ N       *****: Any other java version
     }
     newest_game_version: URL to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
+    windows_compatibility: If set to true, windows compatibility will be enabled
+        If set to true, the CLI will look UGLY!
+        This will not print any \r characters (these characters set the cursor to the start of the line)
+        so loading bars will extend over hundrets of lines.
 }
 ```
-
-Every field in this json file can be used in ```P``` marked fields. Simply put ```%field%``` (or if it is a nested
-field ```%parent_child%``` > so ```%version_major%``` works.)
 
 ### versions.json
 

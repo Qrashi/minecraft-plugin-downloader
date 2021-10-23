@@ -31,7 +31,7 @@ def main(automated: bool, interactive: bool):
         obj.retrieve_newest()  # Retrieve the newest software
         software_objects[software] = obj
 
-    cli.success("Retrieved newest versions!")
+    cli.success("Retrieved newest versions!", vanish=True)
     # Update every server
     updated = 0
     for server_name, server_info in servers.json.items():
@@ -99,10 +99,13 @@ def main(automated: bool, interactive: bool):
 
     for software in software_objects.values():
         all_software[software.software]["hash"] = software.get_hash()
-    cli.success("Copied all software, updated databases, copied " + str(updated) + " dependencies")
+    if updated == 0:
+        cli.success("Checked for new versions")
+    else:
+        cli.success("Updated " + str(updated) + " dependencies")
 
     pool.sync()
-    cli.success("Update sequence complete, restarting servers.")
+    cli.success("Update sequence complete")
 
 
 if __name__ == "__main__":

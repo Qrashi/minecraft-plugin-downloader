@@ -20,7 +20,7 @@ def is_valid(version: str, report_errors=False, terminate=False) -> bool:
                     exit()
 
     version = str(version)
-    if len(version) > 6:  # Longer than 1.17.7 (6)
+    if len(version) > 7:  # Longer than 1.17.77 (6)
         error(version + " is too long!", False)
         return False
     if len(version) < 3:  # Shorter than 1.1 (3)#
@@ -76,7 +76,7 @@ def _int(string: str):
 
 
 class Version:
-    def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]]):
+    def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]], enable_database_check=True):
         if type(version) == str:
             self.major, self.minor = from_string(version)
         elif type(version) == dict:
@@ -86,7 +86,8 @@ class Version:
             self.major = version[0]
             self.minor = version[1]
 
-        if self.string() not in versions:  # version not found in versions database
+        # TODO: Clean up for gods sake
+        if self.string() not in versions and enable_database_check and self.string() != "1.0" and not self.string().endswith(".99"):  # version not found in versions database
             report("Version integrity checker", 1, "The given version does not seem to exist in the versions database",
                    additional="Version: " + self.string())
 
@@ -190,3 +191,6 @@ class VersionRangeRequirement:
 
     def dict(self):
         return {"min": self.minimum.string(), "max": self.maximum.string()}
+
+    def matches(self, requirement: VersionRangeRequirement):
+        return self.minimum.matches(requirement.minimum) and self.maximum.matches(requirement.maximum)
