@@ -117,6 +117,18 @@ N   }
         java
         or whatever you like into it to use with other software.
     }
+    software: {
+        dependency: {
+            enabled: boolean
+            copy_path: Path to copy to (with "/" at the beginning)
+        }
+        dependency: {
+            enabled: boolean
+            copy_path: Path to copy to (with "/" at the beginning)
+        }
+        ...
+        ...
+    }
 }
 ```
 

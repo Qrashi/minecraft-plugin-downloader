@@ -1,5 +1,6 @@
 from os import stat
 
+from utils.FileAccessField import FileAccessField
 from .cli_provider import cli
 from .error import report
 from .file_pool import pool
@@ -61,7 +62,11 @@ class Software:
         """
         servers = pool.open("data/servers.json").json
         server_info = servers[server]
-        server_version = Version(server_info["version"])
+        if server_info["version"]["type"] == "version":
+            server_version = Version(server_info["version"]["value"])
+        else:
+            access = FileAccessField(server_info["version"]["value"])
+            server_version = Version(access.access(pool.open(access.filepath).json))
         destination_path = server_info["path"] + server_info["software"][self.software]["copy_path"]
 
         if server_version.fulfills(self.requirements):

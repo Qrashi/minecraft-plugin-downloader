@@ -34,7 +34,7 @@ def main():
     for server_name, server_info in servers.json.items():
         # Get the server version
         if server_info["version"]["type"] == "version":
-            server_version = Version(server_info["value"])
+            server_version = Version(server_info["version"]["value"])
         else:
             access = FileAccessField(server_info["version"]["value"])
             server_version = Version(access.access(pool.open(access.filepath).json))
