@@ -181,10 +181,6 @@ config.json: {
     sources_folder: Software folder (Where all software is stored)
     newest_game_version: URL to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
-    windows_compatibility: If set to true, windows compatibility will be enabled
-        If set to true, the CLI will look UGLY!
-        This will not print any \r characters (these characters set the cursor to the start of the line)
-        so loading bars will extend over hundrets of lines.
 }
 ```
 

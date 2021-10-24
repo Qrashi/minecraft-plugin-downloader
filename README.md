@@ -16,8 +16,7 @@ This set of small python scripts is aimed to help you manage your server plugins
 ## Installation
 
 1. Clone the repository. (```git clone https://github.com/Qrashi/minecraft-plugin-downloader.git```)
-2. Execute ```pip -r requirements.txt``` to install all dependencies
-3. If you are using this script on Windows, please enable the ```windows_compatibility``` option in ```config.json```
+2. Execute ```pip install -r requirements.txt``` to install all dependencies
 4. Execute ```update.py```. This will
    1. Generate configuration files
    2. Download minecraft version information (by default) from the paper API
