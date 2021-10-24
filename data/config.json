@@ -7,6 +7,5 @@
         ]
     },
     "sources_folder": "software",
-    "version_check_interval": 3,
-    "windows_compatibility": false
+    "version_check_interval": 3
 }

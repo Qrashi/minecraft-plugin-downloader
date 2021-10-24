@@ -38,7 +38,7 @@ if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > poo
             versions_json.json["versions"].append(version.string())
             if version.is_higher(remote):
                 remote = version
-            major_only = Version((version.major, "")).string()
+            major_only = Version((version.major, ""), enable_database_check=False).string()
             if major_only not in versions_json.json["versions"]:
                 versions_json.json["versions"].append(major_only)
         for static_version in STATIC_VERSIONS:
