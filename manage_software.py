@@ -165,7 +165,7 @@ def add(file: str):
     range_requirement = VersionRangeRequirement((minimum, maximum))
 
     print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-    cli.info("If you would like to add auto-update, please read \"auto_update.md\"!")
+    cli.info("If you would like to add auto-update, please read \"examples.md\"!")
 
     cli.success("All data collected!")
     cli.say("To add: ")
@@ -194,7 +194,7 @@ def add(file: str):
 
     software_file.json = all_software
     pool.sync()
-    cli.info("If you would like to add auto-update, please read \"auto_update.md\"!")
+    cli.info("If you would like to add auto-update, please read \"examples.md\"!")
 
 
 if __name__ != "__main__":

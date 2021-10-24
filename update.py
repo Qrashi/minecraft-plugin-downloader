@@ -1,3 +1,5 @@
+from utils import files
+from utils.FileAccessField import FileAccessField
 from utils.cli_provider import cli
 from utils.error import report
 from utils.events import report as report_event
@@ -7,12 +9,7 @@ from utils.software import Software
 from utils.version import Version
 
 
-def main(automated: bool, interactive: bool):
-    # Ask users
-    if automated:
-        cli.simple_wait_fixed_time("Waiting for user confirmation", "User confirmed", 10)
-        # Actually wait for user confirmation
-
+def main():
     cli.load("Starting update, loading software data...", vanish=True)
 
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
@@ -35,7 +32,12 @@ def main(automated: bool, interactive: bool):
     # Update every server
     updated = 0
     for server_name, server_info in servers.json.items():
-        server_version = Version(server_info["version"])
+        # Get the server version
+        if server_info["version"]["type"] == "version":
+            server_version = Version(server_info["value"])
+        else:
+            access = FileAccessField(server_info["version"]["value"])
+            server_version = Version(access.access(pool.open(access.filepath).json))
         # game version detection for dependency
         if "auto_update" in server_info:
             # Check if server dependencies are ready
@@ -109,17 +111,8 @@ def main(automated: bool, interactive: bool):
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Update the server software")
-    parser.add_argument('--automated', action='store_true',
-                        help="Run the script in automated mode (give users the option to delay the update)")
-    parser.add_argument('--interactive', action='store_true',
-                        help="Run the script in automated mode (give users the option to delay the update)")
-    args = parser.parse_args()
-
     try:
-        main(args.automated, args.interactive)
+        main()
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
         exit()

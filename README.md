@@ -31,4 +31,5 @@ The first time setup **REQUIRES** an internet connection in order to fetch basic
 3. Rename the file to a clean name (```paper.jar``` instead of ```paper-1.17-501.jar```)
 4. Execute ```manage_software.py``` and follow the instructions
 
-#### Example configurations can be found in the auto_update.md file
+#### Example configurations can be found in the examples.md file
+For a more detailed overview of the different json files, please view the "data_info.md" file in "data/"

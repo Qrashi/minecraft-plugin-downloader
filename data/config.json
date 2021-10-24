@@ -7,10 +7,6 @@
         ]
     },
     "sources_folder": "software",
-    "start_requirements": {
-        "CPU": 70,
-        "RAM": 90
-    },
     "version_check_interval": 3,
     "windows_compatibility": false
 }

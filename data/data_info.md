@@ -95,7 +95,7 @@ servers.json: {name: server, name: server, name: server, ...}
 
 server: {
 N   auto_update: {
-N       enabled: boolean
+N       enabled: boolean > true or false
 N       blocking: [
 N           blocking_software: {
 N               name: Name of software
@@ -104,19 +104,18 @@ N           }
 N       ]
 N   }
     path: Path to server ROOT directory
-    version: Version as a string
-    software: {
-        name: { # Name = name of dependency
-            copy_path: path to copy to WITHOUT /! (e.g "paper.jar")
-            enabled: boolean
-        }
-    }
-    hardware: {
-        port: port number
-        screen: The screen to connect to, automatically generated.
-        ram: The RAM specified in the start.sh file
-        start: The start script filename WITHOUT /! (e.g: "start.sh")
-        java: Java version (NEWEST or 8)
+    version: {
+        type: Either "version" or "file"
+        value: 
+             If version: The version as a string
+             If file: {
+                  file: path to file
+                  access: How to navigate to the version string (like in URLAccessField)
+             }
+        Hardware won't be used by the script itself, so you can add custom tags like
+        port
+        java
+        or whatever you like into it to use with other software.
     }
 }
 ```
@@ -174,23 +173,12 @@ N       name: The URL to fetch the artifact name
 }
 ```
 
-## REPLACING
-
 ### config.json
 
 ```
 config.json: {
     batch_size: Batch size for copying (amount of RAM the copy operation will take)
     sources_folder: Software folder (Where all software is stored)
-    start_requirements: {
-        CPU: Amount of CPU that needs to avialible to start ANY server 
-        RAM: Amount of RAM that needs to avialible to start ANY server
-    }
-    java_paths: {
-        NEWEST: Path to newest java version
-        "8": Path to java 8
-N       *****: Any other java version 
-    }
     newest_game_version: URL to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
     windows_compatibility: If set to true, windows compatibility will be enabled
@@ -209,8 +197,8 @@ Information on all the existing game versions, will work automatically
     last_check: The days since epoch at the date of the last check
     current_version: Current game version (version object)
     versions: [
-        version (sting),
-        version (sting),
+        version (string),
+        version (string),
         ...
     ]
 }

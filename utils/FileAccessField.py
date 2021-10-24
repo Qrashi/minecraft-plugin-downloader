@@ -7,13 +7,13 @@ def dict_str(field: Union[list, str]) -> list:
     return field
 
 
-class URLAccessField:
+class FileAccessField:
     def __init__(self, field: Union[Dict[str, str], str]):
         if type(field) == str:
-            self.url = field
+            self.filepath = field
             self.access_field = None
         else:
-            self.url = field["URL"]
+            self.filepath = field["file"]
             self.access_field = field["access"]
 
     def access(self, json: dict):

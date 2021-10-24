@@ -86,8 +86,7 @@ class Version:
             self.major = version[0]
             self.minor = version[1]
 
-        # TODO: Clean up for gods sake
-        if self.string() not in versions and enable_database_check and self.string() != "1.0" and not self.string().endswith(".99"):  # version not found in versions database
+        if self.string() not in versions and enable_database_check and not self.minor.startswith("9"):  # version not found in versions database
             report("Version integrity checker", 1, "The given version does not seem to exist in the versions database",
                    additional="Version: " + self.string())
 
