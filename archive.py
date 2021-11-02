@@ -3,7 +3,7 @@ from utils.jsonFile import JsonFile
 
 
 def main():
-    cli.updateSender("ARM")
+    cli.update_sender("ARM")
     cli.load("Accessing recent errors & events...", vanish=True)
     errors_file, events_file = JsonFile("data/errors.json"), JsonFile("data/events.json")
     cli.info(

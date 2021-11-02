@@ -66,7 +66,7 @@ def remove(file: str):
     sources_file = pool.open("data/sources.json")
     all_software = software_file.json
 
-    cli.updateSender("RM")
+    cli.update_sender("RM")
     cli.success("Removing " + file + " from the software repository...")
 
     name = ""
@@ -79,7 +79,7 @@ def remove(file: str):
     rm_files = cli.ask("Would you like do delete all registered occurrences of this dependency? (Copies of the "
                        "dependency in a server) ") in ["y", "yes"]
     print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-    cli.updateSender("SUM")
+    cli.update_sender("SUM")
     cli.info("Summary")
     cli.say("To remove: ")
     cli.say(
@@ -124,7 +124,7 @@ def add(file: str):
     software_file = pool.open("data/software.json")
     all_software = software_file.json
 
-    cli.updateSender("ADD")
+    cli.update_sender("ADD")
     cli.success("Adding " + file + " to the software repository...")  # Doesn't actually do something
 
     def ask():
@@ -150,7 +150,7 @@ def add(file: str):
 
     severity = ask()
 
-    cli.updateSender("VER")
+    cli.update_sender("VER")
 
     def ask(version: str) -> Version:
         version = cli.ask("Please enter " + version + " version (e.g: 1.17.1): ", vanish=True)
@@ -179,7 +179,7 @@ def add(file: str):
             cli.fail("Aborting")
             exit()
 
-    cli.updateSender("MNG")
+    cli.update_sender("MNG")
     cli.info("Saving to json...")
 
     sources_file = pool.open("data/sources.json")

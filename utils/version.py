@@ -83,8 +83,8 @@ class Version:
             self.major = version["major"].replace("1.", "")
             self.minor = version["minor"].replace(".", "")
         else:
-            self.major = version[0]
-            self.minor = version[1]
+            self.major = str(version[0])
+            self.minor = str(version[1])
 
         if self.string() not in versions and enable_database_check and not self.minor.startswith("9"):  # version not found in versions database
             report("Version integrity checker", 1, "The given version does not seem to exist in the versions database",
@@ -107,7 +107,7 @@ class Version:
         If there is no higher main version, return current version
         :return Version: Version
         """
-        attempt = Version((self.major, self.minor + 1))
+        attempt = Version((self.major, str(int(self.minor) + 1)))
         if attempt.string() in versions:
             return attempt
         # There is no next major version
@@ -118,10 +118,10 @@ class Version:
         Get next highest major game version, if there is no higher minor version use the current version
         :return Version: Version
         """
-        attempt = Version((self.major + 1, ""))
+        attempt = Version((str(int(self.major) + 1), ""))
         if attempt.string() in versions:
             return attempt
-        attempt = Version((self.major + 1, 1))
+        attempt = Version((str(int(self.major) + 1), 1))
         if attempt.string() in versions:
             return attempt
         return self
