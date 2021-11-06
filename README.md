@@ -12,8 +12,7 @@ This set of small python scripts is aimed to help you manage your server plugins
 * Pretty CLI interface :)
 * Clear entry end exit point, easy to embed
 
-![updater](https://user-images.githubusercontent.com/56923218/140587323-a1bb5125-5b7f-4d6a-bf3e-76b9cc386f9a.gif)
-
+![script-in-action](https://user-images.githubusercontent.com/56923218/140615054-b18bbd67-6987-450c-8a6d-dbcf7c996f2f.gif)
 
 ## Installation
 
