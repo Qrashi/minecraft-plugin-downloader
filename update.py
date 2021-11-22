@@ -116,5 +116,12 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
         exit()
+    except Exception as e:
+        if not isinstance(e, KeyboardInterrupt):
+            report("updater - main", 10, "Updater quit unexpectedly! Uncaught exception: ", exception=e)
+            cli.fail("ERROR: Uncaught exception: ")
+            print(e)
+
+
 else:
     cli.fail("This file needs to be executed directly!")

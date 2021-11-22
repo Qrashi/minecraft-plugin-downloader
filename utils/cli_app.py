@@ -156,10 +156,10 @@ class CLIApp:
                 self.calculate_multiplier()
                 self.update(0)
 
-            def update_message(self, message):
+            def update_message(self, message: str, done: int = 0):
                 self.__message = message
                 self.calculate_multiplier()
-                self.update(0)
+                self.update(done)
 
             def fail(self, message):
                 self.__print(Fore.RED, "!", message, False)

@@ -170,3 +170,74 @@ Having no auto-update config at all is also fine! The script automatically check
 
 # Static links
 Later on, I will add support for static links (e.g dropbox links). You can then set a "interval" and the script will just download the file every xy Months / days.
+
+
+# Tasks
+Software like paper needs a small bit of processing before using (applying patches).
+This can be done using tasks. The example below shows such a source.
+``sources.json``
+```json
+{
+   "paper": {
+      "build": {
+         "download": "https://papermc.io/api/v2/projects/paper/versions/%newest_version%/builds/%build%/downloads/%artifact%",
+         "local": 388,
+         "name": {
+            "URL": "https://papermc.io/api/v2/projects/paper/versions/%newest_version%/builds/%build%",
+            "access": [
+               "downloads",
+               "application",
+               "name"
+            ]
+         },
+         "remote": {
+            "URL": "https://papermc.io/api/v2/projects/paper/versions/%newest_version%",
+            "access": [
+               "builds"
+            ]
+         }
+      },
+      "compatibility": {
+         "behaviour": "max|precise",
+         "remote": {
+            "URL": "https://papermc.io/api/v2/projects/paper/",
+            "access": [
+               "versions"
+            ]
+         }
+      },
+      "last_checked": "10.23 17:47",
+      "server": "paper API",
+      "tasks": {
+         "copy_downloaded": true,
+         "enabled": true,
+         "cleanup": true,
+         "tasks": [
+            {
+               "progress": {
+                  "message": "Patching vanilla server with paper patches",
+                  "value": 10
+               },
+               "type": "run",
+               "value": "java -Dpaperclip.patchonly=true -jar paper.jar"
+            },
+            {
+               "progress": {
+                  "message": "Copying patched jar",
+                  "value": 90
+               },
+               "type": "end",
+               "value": {
+                  "file": "cache/patched_%newest_version%.jar"
+               }
+            }
+         ]
+      }
+   }
+}
+```
+As you can see, the script will
+1. Copy the downloaded file into the temporary folder
+2. Patch the vanilla jar using "java -Dpaperclip.patchonly=true -jar paper.jar" and inform the user that it is doing so using the progress properties.
+3. Copy the result back into the "software" folder.
+4. If one of these tasks fails, it will delete the temporary files (You can also set this to false to better debug errors)

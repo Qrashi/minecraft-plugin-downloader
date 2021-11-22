@@ -181,7 +181,56 @@ N       name: The URL to fetch the artifact name
             If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
         remote: The URL to download build information from.
     }
-   last_checked: The last time the sourcce has been checked
+    tasks: {
+N       enabled: Enable tasks to execute after downloading the newest build
+        copy_downloaded: boolean; copy the downloaded file into tmp directory
+        cleanup: boolean; clean up the files after an error (good for investigating errors)
+        tasks: [
+            {
+                type: Type of task; Types of tasks:
+                * run: Run a console command in the tmp directory (os.system)
+                * end: Specify what to do at the end of all tasks (optional)
+                (not implemented)* write: Write stuff to a jsonFile
+                value: Options for the tasks:
+A               * run: requires what to run example: "run": "java -jar xy.jar"
+                    You may use %build% for the newest build number.
+                    You may use %newest_version% for the newest detected compatible version
+                    If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
+                
+                * end: the file to replace the downloaded file with, keep the tmp folder or not; example:
+                {
+A                   file: (optional) the file to replace the previously downloaded file with !NO "/" before the name! (for example "paper_1.17.1.jar" will replace the contents of the downloaded file with the contents of "paper_1.17.1.jar")
+A                   keep: (optional) the path to copy the tmp directory to (for exaple "/home/minecraft/builds/%build%" will create the %build% directory and copy the contents of tmp into it.)
+                        You may use %build% for the newest build number.
+                        You may use %newest_version% for the newest detected compatible version
+                        If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
+                                            
+                    Please note that there is no way to "offically" keep the tmp directory in order to keep the software folder clean.
+                }
+                
+                (not implemented)* write: The file to write to; a list of things to change.
+                {
+A                   file: filename (must be of json format)
+                    change: [
+                        {
+A                           path: Path to field that requires a change e.g ["builds", "downloaded"] (can create values)
+A                           value: The new value
+                                You may use %build% for the newest build number.
+                                You may use %newest_version% for the newest detected compatible version
+                                If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.                           
+                            
+                            This works similar to JSONAccessField
+                    ]
+                }
+                progress: {
+                    value: What percentage to display in the progress bar (0 - 100) e.g 57
+                    message: What message to display in the progress bar e.g "Patching vanilla server..."
+                }
+                
+            }
+        ]
+    }
+    last_checked: The last time the sourcce has been checked
 }
 ```
 
