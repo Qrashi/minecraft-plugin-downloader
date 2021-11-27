@@ -212,12 +212,12 @@ class Source:
 
         try:
             response = get(((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build))).replace("%artifact%", artifact),
-                           stream=True)
+                           stream=True, allow_redirects=True, headers={"User-Agent": "Dependency downloader"})
         except Exception as e:
             cli.fail("Could not start download of " + self.source + " - aborting")
             report("download - " + self.source, self.severity, "Exception while downloading!",
                    additional="Last update: " + self.last_check, exception=e)
-            return Falseremove
+            return False
         if response.status_code != 200:
             cli.fail(
                 "Failure while downloading " + self.source + " from " + self.server + " - status code " + str(
@@ -371,3 +371,4 @@ class Source:
         if newest_build > self.config["build"]["local"]:
             if self.download_build(newest_build):
                 pool.open("data/sources.json").json[self.source]["build"]["local"] = newest_build
+                cli.success("Downloaded build " + str(newest_build) + " for " + self.source + "!")

@@ -31,28 +31,32 @@ class Software:
         self.hash = software_json[software]["hash"]
         self.file = pool.open("data/config.json").json["sources_folder"] + "/" + software_json[software]["file"]
 
-    def get_hash(self) -> str:
+    def get_hash(self):
         """
-        Gets hash for file
-        :return: hash
+        Retrieve hash for local file
+        :return:
         """
         return getHash(self.file)
 
-    def needs_update(self) -> bool:
+    def needs_update(self, other: str) -> bool:
         """
-        If there has been a file change since the last check
+        Checks if the remote file hash is equal to the current hash
         :return bool: If there has been a file change
         """
-        return getHash(self.file) != self.hash
+        return self.hash != getHash(other)
 
-    def retrieve_newest(self):
+    def retrieve_newest(self) -> bool:
         """
         Retrieves newest version from the internet if possible
-        :return:
+        :return bool: Dependency was updated in some way
         """
         cli.info("Retrieving newest version for " + self.software, vanish=True)
         if self.has_source():
             self.source.update()
+        new_hash = self.get_hash()
+        updated = self.hash == new_hash
+        self.hash = new_hash
+        return updated
 
     def copy(self, server: str) -> bool:
         """
@@ -62,49 +66,41 @@ class Software:
         """
         servers = pool.open("data/servers.json").json
         server_info = servers[server]
-        if server_info["version"]["type"] == "version":
-            server_version = Version(server_info["version"]["value"])
-        else:
-            access = FileAccessField(server_info["version"]["value"])
-            server_version = Version(access.access(pool.open(access.filepath).json))
         destination_path = server_info["path"] + server_info["software"][self.software]["copy_path"]
+        progress = cli.progress_bar("Updating " + self.software + " in " + server, vanish=True)
+        # Generate destination file...
+        try:
+            generate(destination_path, default="")
+        except Exception as e:
+            report("copy - " + self.software + " > " + server, self.severity,
+                   "Could not generate destination file at " + self.file + "! Could be a permission error.",
+                   exception=e)
+            progress.fail("Could not copy " + self.software + " to " + server + ": ")
+            print(e)
+            cli.warn("Skipping copy...")
+            return False
 
-        if server_version.fulfills(self.requirements):
-            progress = cli.progress_bar("Updating " + self.software + " in " + server, vanish=True)
-
-            # Generate destination file...
-            try:
-                generate(destination_path, default="")
-            except Exception as e:
-                report("copy - " + self.software + " > " + server, self.severity,
-                       "Could not generate destination file at " + self.file + "! Could be a permission error.",
-                       exception=e)
-                progress.fail("Could not copy " + self.software + " to " + server + ": ")
-                print(e)
-                cli.warn("Skipping copy...")
-                return False
-
-            # Copy file
-            try:
-                with open(self.file, "rb") as source, open(destination_path, "wb") as destination:
-                    copied = 0  # Copied bytes
-                    total = stat(self.file).st_size
-                    while True:
-                        piece = source.read(pool.open("data/config.json").json["batch_size"])
-                        if not piece:
-                            break  # End of file
-                        copied += len(piece)
-                        destination.write(piece)
-                        progress.update((copied / total * 100))
-                    progress.complete("Updated " + self.software + "!")
-            except Exception as e:
-                report("copy - " + self.software + " > " + server, self.severity,
-                       "Copy process did not finish: ", exception=e)
-                progress.fail("Update failed: ")
-                print(e)
-                cli.warn("Skipping copy")
-                return False
-            return True
+        # Copy file
+        try:
+            with open(self.file, "rb") as source, open(destination_path, "wb") as destination:
+                copied = 0  # Copied bytes
+                total = stat(self.file).st_size
+                while True:
+                    piece = source.read(pool.open("data/config.json").json["batch_size"])
+                    if not piece:
+                        break  # End of file
+                    copied += len(piece)
+                    destination.write(piece)
+                    progress.update((copied / total * 100))
+                progress.complete("Updated " + self.software + "!")
+        except Exception as e:
+            report("copy - " + self.software + " > " + server, self.severity,
+                   "Copy process did not finish: ", exception=e)
+            progress.fail("Update failed: ")
+            print(e)
+            cli.warn("Skipping copy")
+            return False
+        return True
 
 
 if __name__ == "__main__":

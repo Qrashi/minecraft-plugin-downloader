@@ -123,7 +123,7 @@ class CLIApp:
     def load(self, message: str, vanish=False):
         self.print(Fore.BLUE, ">", message, vanish)
 
-    def simple_wait_fixed_time(self, message: str, end_message: str, time: int, vanish=False):
+    def simple_wait_fixed_time(self, message: str, end_message: str, time: int, vanish: bool = False, green: bool = False):
         self.print(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
         pos_small = 1
         pos_big = 1
@@ -137,7 +137,10 @@ class CLIApp:
             if int(pos_big) == len(loading_big) - 1:
                 pos_big = -1
         sleep(0.25)
-        self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
+        if green:
+            self.print(Fore.GREEN, "✔", end_message, vanish)
+        else:
+            self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
 
     def progress_bar(self, message, vanish=False):
         class ProgressBar:
@@ -161,12 +164,15 @@ class CLIApp:
                 self.calculate_multiplier()
                 self.update(done)
 
-            def fail(self, message):
+            def fail(self, message: str, ):
                 self.__print(Fore.RED, "!", message, False)
                 # A failure will always stay in CLI
 
-            def complete(self, message):
-                self.__print(Fore.CYAN, "✔", message, vanish)
+            def complete(self, message: str, green: bool = False):
+                if green:
+                    self.__print(Fore.GREEN, "✔", message, vanish)
+                else:
+                    self.__print(Fore.CYAN, "✔", message, vanish)
 
             def update(self, done):
                 done_modified = int(done * self.__multiplier)
@@ -176,7 +182,7 @@ class CLIApp:
 
         return ProgressBar(self.print)
 
-    def wait_until_event(self, message: str, end_message: str, vanish=False) -> Callable:
+    def wait_until_event(self, message: str, end_message: str, vanish: bool = False, green: bool = False) -> Callable:
 
         from threading import Thread, Event
 
@@ -195,7 +201,10 @@ class CLIApp:
                     pos_small = 0
                 if int(pos_big) == len(loading_big) - 1:
                     pos_big = 0
-            self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
+            if green:
+                self.print(Fore.GREEN, "✔", end_message, vanish)
+            else:
+                self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
 
         self.print(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
         Thread(target=display_loading, args=()).start()

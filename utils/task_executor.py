@@ -10,7 +10,7 @@ from .error import report
 def execute(task: dict, directory: str, replace: Callable[[str], str], final_file: str, source_name: str, last_check: str, severity: int) -> bool:
     type = task["type"]
     if type == "run":
-        code = run(replace(task["value"]), stdout=PIPE, stderr=PIPE, cwd=directory, shell=True)  # TODO: Retrieve output and store it in error
+        code = run(replace(task["value"]), stdout=PIPE, stderr=PIPE, cwd=directory, shell=True)
         if code.returncode != 0:
             # Wrong return code
             cli.fail("Error while executing task " + type + " for " + source_name)

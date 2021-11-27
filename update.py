@@ -22,16 +22,19 @@ def main():
     software_objects = {}
 
     cli.info("Retrieving newest versions...", vanish=True)
+    updated = 0
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
-        obj.retrieve_newest()  # Retrieve the newest software
+        updated = updated + 1 if obj.retrieve_newest() else 0  # Retrieve the newest software, update hashes increment counter if successful
         software_objects[software] = obj
 
     cli.success("Retrieved newest versions!", vanish=True)
     # Update every server
-    updated = 0
+    dependencies_updated = 0
+    updated_servers = 0
     for server_name, server_info in servers.json.items():
+        changed = False
         # Get the server version
         if server_info["version"]["type"] == "version":
             server_version = Version(server_info["version"]["value"])
@@ -72,6 +75,7 @@ def main():
                                     {"name": dependency, "since": DAYS_SINCE_EPOCH})
 
                     if ready:  # Ready to version increment!
+                        changed = True
                         server_info["version"] = current_game_version.string()
                         server_info["auto_update"]["blocking"] = []
                         cli.success(
@@ -81,7 +85,7 @@ def main():
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = []
 
-        for dependency in server_info["software"]:
+        for dependency, info in server_info["software"]:
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
@@ -91,20 +95,19 @@ def main():
                 continue
             else:
                 software = software_objects[dependency]
-                if software.needs_update():  # Skip update if no update happened
+                if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
                     if not server_info["software"][dependency]["enabled"]:
                         continue
                     if server_version.fulfills(software.requirements):
                         # Software IS compatible, copy is allowed > copy
                         software.copy(server_name)
-                        updated = updated + 1
+                        changed = True
+                        dependencies_updated = dependencies_updated + 1
 
-    for software in software_objects.values():
-        all_software[software.software]["hash"] = software.get_hash()
-    if updated == 0:
-        cli.success("Checked for new versions")
-    else:
-        cli.success("Updated " + str(updated) + " dependencies")
+        updated_servers = updated_servers + 1 if changed else 0
+
+    cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
+    cli.success("Updated " + str(dependencies_updated) + " in " + str(updated_servers) + " servers.")
 
     pool.sync()
     cli.success("Update sequence complete")
