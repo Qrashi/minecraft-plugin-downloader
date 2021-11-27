@@ -45,7 +45,7 @@ def main():
             print("- " + detected_file + " (" + operation + ")")
 
         def ask():
-            result = cli.ask("Software to add: ", vanish=True)
+            result = cli.ask("Software to manage: ", vanish=True)
             if result in detected_files.keys():
                 return result
             else:
@@ -83,7 +83,7 @@ def remove(file: str):
     cli.info("Summary")
     cli.say("To remove: ")
     cli.say(
-        "dependency " + software_info["identifier"] + " (" + name + ") [" + str(
+        "dependency \"" + software_info["identifier"] + "\" (" + name + ") [" + str(
             software_info["severity"]) + "]")
     cli.say("local file: " + file)
     cli.say("Version requirements: " + VersionRangeRequirement(software_info["requirements"]).string())
@@ -112,7 +112,8 @@ def remove(file: str):
         servers_file.json = servers
         cli.info("Deleted ALL files and ALL occurrences in server configurations!")
 
-    sources_file.json.pop(name)
+    if name in sources_file.json:
+        sources_file.json.pop(name)
     all_software.pop(name)
     software_file.json = all_software
 
