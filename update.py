@@ -26,7 +26,9 @@ def main():
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
-        updated = updated + 1 if obj.retrieve_newest() else 0  # Retrieve the newest software, update hashes increment counter if successful
+        was_updated, new_hash = obj.retrieve_newest() # Retrieve the newest software, update hashes increment counter if successful
+        updated = updated + 1 if was_updated else 0
+        obj.hash = new_hash
         software_objects[software] = obj
 
     cli.success("Retrieved newest versions!", vanish=True)

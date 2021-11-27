@@ -45,18 +45,18 @@ class Software:
         """
         return self.hash != getHash(other)
 
-    def retrieve_newest(self) -> bool:
+    def retrieve_newest(self) -> tuple[bool, str]:
         """
         Retrieves newest version from the internet if possible
         :return bool: Dependency was updated in some way
+        :return str: The new hash
         """
         cli.info("Retrieving newest version for " + self.software, vanish=True)
         if self.has_source():
             self.source.update()
+        old_hash = self.hash
         new_hash = self.get_hash()
-        updated = self.hash == new_hash
-        self.hash = new_hash
-        return updated
+        return old_hash == new_hash, new_hash
 
     def copy(self, server: str) -> bool:
         """
