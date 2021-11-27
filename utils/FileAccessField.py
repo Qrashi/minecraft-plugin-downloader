@@ -1,4 +1,5 @@
 from typing import Union, Dict
+from .error import report
 
 
 def dict_str(field: Union[list, str]) -> list:
@@ -26,5 +27,9 @@ class FileAccessField:
             return json
         access = json
         for to_access in dict_str(self.access_field):
-            access = access[to_access]
+            try:
+                access = access[to_access]
+            except Exception as e:
+                report("FileAccesField accessing function", 10, "Could not access Json, some error occured. URL: " + self.filepath, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
+                return None
         return access

@@ -1,4 +1,5 @@
 from typing import Union, Dict
+from .error import report
 
 
 def dict_str(field: Union[list, str]) -> list:
@@ -10,10 +11,10 @@ def dict_str(field: Union[list, str]) -> list:
 class URLAccessField:
     def __init__(self, field: Union[Dict[str, str], str]):
         if type(field) == str:
-            self.url = field
+            self.url: str = field
             self.access_field = None
         else:
-            self.url = field["URL"]
+            self.url: str = field["URL"]
             self.access_field = field["access"]
 
     def access(self, json: dict):
@@ -26,5 +27,9 @@ class URLAccessField:
             return json
         access = json
         for to_access in dict_str(self.access_field):
-            access = access[to_access]
+            try:
+                access = access[to_access]
+            except Exception as e:
+                report("JsonField accessing function", 10, "Could not access Json, some error occured. URL: " + self.url, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
+                return None
         return access

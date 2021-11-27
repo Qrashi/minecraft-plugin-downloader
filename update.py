@@ -87,7 +87,7 @@ def main():
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = []
 
-        for dependency, info in server_info["software"]:
+        for dependency, info in server_info["software"].items():
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
@@ -109,7 +109,7 @@ def main():
         updated_servers = updated_servers + 1 if changed else 0
 
     cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
-    cli.success("Updated " + str(dependencies_updated) + " in " + str(updated_servers) + " servers.")
+    cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
 
     pool.sync()
     cli.success("Update sequence complete")

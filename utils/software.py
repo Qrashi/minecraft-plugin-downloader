@@ -1,13 +1,12 @@
 from os import stat
 
-from utils.FileAccessField import FileAccessField
 from .cli_provider import cli
 from .error import report
 from .file_pool import pool
 from .files import generate
 from .sha244utils import getHash
 from .source import Source
-from .version import VersionRangeRequirement, Version
+from .version import VersionRangeRequirement
 
 
 class Software:
