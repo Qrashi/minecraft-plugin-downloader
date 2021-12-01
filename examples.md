@@ -228,7 +228,7 @@ This can be done using tasks. The example below shows such a source.
                },
                "type": "end",
                "value": {
-                  "file": "cache/patched_%newest_version%.jar"
+                  "file": "versions/%newest_version%/paper-%newest_version%.jar"
                }
             }
          ]

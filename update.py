@@ -1,3 +1,6 @@
+import traceback
+from subprocess import run, PIPE
+
 from utils import files
 from utils.FileAccessField import FileAccessField
 from utils.cli_provider import cli
@@ -17,6 +20,7 @@ def main():
     software_file = pool.open("data/software.json")
     servers = pool.open("data/servers.json")
     all_software = software_file.json
+    config = pool.open("data/config.json").json
     cli.load("Downloading new software...", vanish=True)
 
     software_objects = {}
@@ -112,6 +116,26 @@ def main():
     cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
 
     pool.sync()
+
+    if config["git_auto_update"]:
+        cli.info("Checking for git updates...", vanish=True)
+
+        code = run("git fetch", stdout=PIPE, stderr=PIPE, shell=True)
+        if code.returncode != 0:
+            # Wrong return code
+            cli.fail("Could not fetch git updates - code " + str(code.returncode))
+            report("Could not fetch git updates! code: " + str(code.returncode),
+                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
+        else:
+            code = run("git pull", stdout=PIPE, stderr=PIPE, shell=True)
+            if code.returncode != 0:
+                cli.fail("Could not pull updates from git - code " + str(code.returncode))
+                report("Could not pull git updates! code: " + str(code.returncode),
+                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
+            else:
+                cli.success("Updated git!")
+                report_event("git", "Updated all files!")
+
     cli.success("Update sequence complete")
 
 
@@ -123,9 +147,10 @@ if __name__ == "__main__":
         exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
-            report("updater - main", 10, "Updater quit unexpectedly! Uncaught exception: ", exception=e)
+            report("updater - main", 10, "Updater quit unexpectedly! Uncaught exception: ", exception=e, additional="Traceback: " + ''.join(traceback.format_exception(None, e, e.__traceback__)))
             cli.fail("ERROR: Uncaught exception: ")
             print(e)
+            cli.fail("More detailed info can be found in the errors.json file")
 
 
 else:

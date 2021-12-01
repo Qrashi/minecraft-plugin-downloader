@@ -1,6 +1,7 @@
 import datetime
 from os import remove, makedirs
 from shutil import copy, rmtree
+from typing import Union
 
 from requests import get
 
@@ -74,13 +75,21 @@ class Source:
                     response.status_code))
                 return
 
+
+            all_software = pool.open("data/software.json").json
+            previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
+
             field = access.access(response.json())
             if type(field) == str:
                 newest = Version(field)
-                if self.config["compatibility"]["behaviour"].endswith("max"):
-                    compatibility = VersionRangeRequirement((newest, Version((newest.major, "99"))))
-                else:
-                    compatibility = VersionRangeRequirement((newest, newest))
+                lower_newest = Version(field)
+                if self.config["compatibility"]["behaviour"].endswith("|major"):
+                    newest = Version((newest.major), "99")
+                    lower_newest = Version((newest.major), "")
+                if self.config["compatibility"]["behaviour"].startswith("extend|"):
+                    compatibility = VersionRangeRequirement((previous_compatibility.minimum, newest))
+                else:  # precise mode
+                    compatibility = VersionRangeRequirement((lower_newest, newest))
             elif type(field) == list:
                 if len(field) == 0:
                     report("Compatibility checker", self.severity,
@@ -101,12 +110,17 @@ class Source:
                     if version_obj.is_lower(lowest):
                         lowest = version_obj
                 maxed_newest = newest
-                if self.config["compatibility"]["behaviour"].endswith("|max"):
+                if self.config["compatibility"]["behaviour"].endswith("|major"):
                     maxed_newest = Version((newest.major, "99"))
                 if self.config["compatibility"]["behaviour"].startswith("max|"):
+                    if self.config["compatibility"]["behaviour"].endswith("|major"):  # all of the max major
+                        compatibility = VersionRangeRequirement((Version((maxed_newest.major, "")), maxed_newest))  # Major version compatible
+                    else:
+                        compatibility = VersionRangeRequirement((maxed_newest, maxed_newest))
+                elif self.config["compatibility"]["behaviour"].startswith("extend|"):
+                    compatibility = VersionRangeRequirement((previous_compatibility.minimum, maxed_newest))  # Previous version compatible
+                elif self.config["compatibility"]["behaviour"].startswith("all"):
                     compatibility = VersionRangeRequirement((lowest, maxed_newest))
-                else:
-                    compatibility = VersionRangeRequirement((newest, maxed_newest))
             else:
                 report("Compatibility checker", self.severity,
                        "Compatibility is not of type array or string! type: " + str(field), additional=self.last_check)
@@ -114,8 +128,6 @@ class Source:
                     "Could not fetch compatibility for " + self.source + " - no list of compatibilities or compatibility found!")
                 return
 
-            all_software = pool.open("data/software.json").json
-            previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
             if not previous_compatibility.matches(compatibility):
                 all_software[self.source]["requirements"] = compatibility.dict()
                 cli.success("Detected version increment for " + self.source + "!")
@@ -130,7 +142,7 @@ class Source:
 
             self.newest_replacer = replace
 
-    def get_newest_build(self) -> int:
+    def get_newest_build(self) -> Union[int, str]:
         url_field = URLAccessField(self.config["build"]["remote"])
         try:
             response = get(self.newest_replacer(url_field.url))  # Replace all placeholders in the string and then
@@ -170,9 +182,10 @@ class Source:
         if type(field) == str or type(field) == int:
             pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
-            return _int(field, throw_error=True)
+            # Single newest build
+            return field
         elif type(field) == list:
-            # List of builds
+            # List of builds MUST be ints to compare
             if len(field) == 0:
                 # No builds!
                 cli.fail("Could not fetch latest build for " + self.source + ", there are no builds (list of builds is empty)")
@@ -268,7 +281,6 @@ class Source:
                                additional="Not deleted: " + self.file + ".tmp", exception=e)
 
                     return False
-
         if "tasks" in self.config:
             if check_enabled(self.config["tasks"]):
                 # Generate temporary directory
@@ -378,7 +390,8 @@ class Source:
             self.check_compatibility()
             checked = True
         newest_build = self.get_newest_build()
-        if newest_build > self.config["build"]["local"]:
+        cli.info("Newest build for " + self.source + " is " + str(newest_build), vanish=True)
+        if newest_build != self.config["build"]["local"]:
             if not checked: self.check_compatibility()
             if self.download_build(newest_build):
                 pool.open("data/sources.json").json[self.source]["build"]["local"] = newest_build

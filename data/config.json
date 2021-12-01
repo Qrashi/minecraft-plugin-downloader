@@ -1,5 +1,6 @@
 {
     "batch_size": 4096,
+    "git_auto_update": true,
     "newest_game_version": {
         "URL": "https://www.papermc.io/api/v2/projects/paper",
         "access": [

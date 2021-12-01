@@ -163,23 +163,33 @@ source: {
     server: The name of the API / server to download from in text (e.g: "paper API")
 N   compatibility:
         remote: URLAccess field to an array of (compatible) versions
-        behaviour: How to handle this array
-            "all|precise": All versions in this array are compatible with the software ("1.6 - 1.8") ALERT: Wont include higher 1.8 versions
-            "max|precise": Only the newest version is compatible with the software (only uses "1.17 - 1.17") 
-            "all|max": All versions and minor versions of maximum version are compatible (would convert "1.6 - 1.8" to "1.6 - 1.8.99")
-            "max|max": All minor versions for the maximum maor versions are compatible (converts "1.17 - 1.17" to "1.17 - 1.17.99")
+        behaviour: How to handle this array / string
+            If the URL points to a ARRAY of compatible versions:
+                "all|minor": All versions in this array are compatible with the software ("1.6 - 1.8") ALERT: Wont include higher 1.8 versions
+                "max|minor": Only the EXACT newest version is compatible with the software (only uses the highest version from the versions array "1.17") 
+                "all|major": All versions and minor versions of maximum version are compatible (would convert "1.6 - 1.8" to "1.6 - 1.8.99")
+                "max|major": All minor versions for the maximum major versions are compatible (converts "1.17 - 1.17" to "1.17 - 1.17.99")
+                "extend|major": Extend the previous up to the newest highest possible minimum version for the major version
+                "extend|minor": Extend to the hightes exact version.
+            If the URL points to a SINGLE compatible version
+                "precise|major": All minor versions for the major versions are supported: "1.17" > "1.17 - 1.17.99"
+                "extend|major": Extend the previous compatibility to the maximum minor version of the recieved major version; "1.14 - 1.17.1" + "1.18" > "1.14 - 1.18.99"
+                "extend|minor": Extend the previous compatibility to the recieved version; "1.14 - 1.17.1" + "1.18" > "1.14 - 1.18"
+                "precise|minor": Only support the recieved version.
     build: {
 A       download: The URL to download a specific version from
             You may use %build% for the newest build number.
             You may use %newest_version% for the newest detected compatible version
             If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
             You may use %artifact% for the artifact name.
-        local: The local build ID AS AN INTEGER!
+        local: The local build ID. Read below for type info.
 N       name: The URL to fetch the artifact name
             You may use %build% for the newest build number.
             You may use %newest_version% for the newest detected compatible version
             If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
         remote: The URL to download build information from.
+            NOTE: If the URL returns a single build id which is the newest
+            it can be a string Build ID.
     }
     tasks: {
 N       enabled: Enable tasks to execute after downloading the newest build
@@ -240,8 +250,9 @@ A                           value: The new value
 config.json: {
     batch_size: Batch size for copying (amount of RAM the copy operation will take)
     sources_folder: Software folder (Where all software is stored)
-    newest_game_version: URL to retrieve the latest game version.
+    newest_game_version: URLAccessField to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
+    git_auto_update: boolean; Try to automatically download newest version from git
 }
 ```
 
