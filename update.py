@@ -55,6 +55,7 @@ def main():
                 if server_info["auto_update"]["enabled"]:
                     cli.info("Checking " + server_name + " version compatibility", vanish=True)
                     ready = True  # ready = ready for version increment
+                    server_info["auto_update"]["blocking"] = []
                     for dependency in server_info["software"]:
                         if dependency not in all_software:
                             # >> Typo in config
@@ -64,13 +65,10 @@ def main():
                                    "Server has unknown dependency, server dependency file might have a typo!")
                             continue
                         software = software_objects[dependency]
-                        if not current_game_version.fulfills(
-                                software.requirements) or server_version.get_next_minor().fulfills(
-                                software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
+                        if (not current_game_version.fulfills(software.requirements)) or (not server_version.get_next_minor().fulfills(software.requirements)):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
                             ready = False  # Plugin incompatibility found, abort
                             if dependency in server_info["auto_update"]["blocking"]:
-                                diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][dependency][
-                                    "since"]
+                                diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][dependency]["since"]
                                 if diff >= 3:
                                     report("updater - " + server_name, int(min(max(2, 2 + (diff * 0.2)), 5)),
                                            "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment since " + str(
