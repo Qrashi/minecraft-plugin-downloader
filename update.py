@@ -115,6 +115,11 @@ def main():
 
     pool.sync()
 
+    if "git_auto_udate" not in config:
+        config["git_auto_update"] = True
+        report_event("git", "Automatic updates have been enabled!")
+        cli.success("Activated automatic updates")
+
     if config["git_auto_update"]:
         cli.info("Checking for git updates...", vanish=True)
 
