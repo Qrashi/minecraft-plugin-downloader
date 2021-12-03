@@ -23,6 +23,38 @@ def main():
     config = pool.open("data/config.json").json
     cli.load("Downloading new software...", vanish=True)
 
+    if "git_auto_update" not in config:
+        config["git_auto_update"] = True
+        report_event("git", "Automatic updates have been enabled!")
+        cli.success("Activated automatic updates")
+
+    if config["git_auto_update"]:
+        cli.info("Checking for git updates...", vanish=True)
+
+        code = run("git fetch", stdout=PIPE, stderr=PIPE, shell=True)
+        if code.returncode != 0:
+            # Wrong return code
+            cli.fail("Could not fetch git updates - code " + str(code.returncode))
+            report("Could not fetch git updates! code: " + str(code.returncode), 10, "Shell process returned non zero error code",
+                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
+        else:
+            code = run("git pull", stdout=PIPE, stderr=PIPE, shell=True)
+            if code.returncode != 0:
+                cli.fail("Could not pull updates from git - code " + str(code.returncode))
+                report("Could not pull git updates! code: " + str(code.returncode), 10, "Shell process returned non zero error code",
+                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
+            else:
+                if not code.stdout.decode('utf-8').endswith("up to date.\n"):
+                    code = run("git log -n 1 --pretty=format:\"%H\"", stdout=PIPE, stderr=PIPE, shell=True)
+                    if code.returncode != 0:
+                        cli.fail("Could not get latest git version " + str(code.returncode) + " - NON FATAL!")
+                        report("Could not get last git version! code: " + str(code.returncode), 1, "Shell process returned non zero error code",
+                               exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
+                    else:
+                        cli.success("Updated to - " + code.stdout.decode('utf-8'))
+                        report_event("git", "Updated all files to commit " + code.stdout.decode('utf-8'))
+
+
     software_objects = {}
 
     cli.info("Retrieving newest versions...", vanish=True)
@@ -118,31 +150,6 @@ def main():
     cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
 
     pool.sync()
-
-    if "git_auto_update" not in config:
-        config["git_auto_update"] = True
-        report_event("git", "Automatic updates have been enabled!")
-        cli.success("Activated automatic updates")
-
-    if config["git_auto_update"]:
-        cli.info("Checking for git updates...", vanish=True)
-
-        code = run("git fetch", stdout=PIPE, stderr=PIPE, shell=True)
-        if code.returncode != 0:
-            # Wrong return code
-            cli.fail("Could not fetch git updates - code " + str(code.returncode))
-            report("Could not fetch git updates! code: " + str(code.returncode),
-                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
-        else:
-            code = run("git pull", stdout=PIPE, stderr=PIPE, shell=True)
-            if code.returncode != 0:
-                cli.fail("Could not pull updates from git - code " + str(code.returncode))
-                report("Could not pull git updates! code: " + str(code.returncode),
-                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
-            else:
-                cli.success("Updated git!")
-                report_event("git", "Updated all files!")
-
     cli.success("Update sequence complete")
 
 
