@@ -76,7 +76,7 @@ def _int(string: str):
 
 
 class Version:
-    def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]], enable_database_check=True):
+    def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]]):
         if type(version) == str:
             self.major, self.minor = from_string(version)
         elif type(version) == dict:
@@ -85,10 +85,6 @@ class Version:
         else:
             self.major = str(version[0])
             self.minor = str(version[1])
-
-        if self.string() not in versions and enable_database_check and not self.minor.startswith("9"):  # version not found in versions database
-            report("Version integrity checker", 1, "The given version does not seem to exist in the versions database",
-                   additional="Version: " + self.string())
 
     def string(self) -> str:
         if self.minor == "":

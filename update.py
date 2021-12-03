@@ -45,8 +45,8 @@ def main():
         if server_info["version"]["type"] == "version":
             server_version = Version(server_info["version"]["value"])
         else:
-            access = FileAccessField(server_info["version"]["value"])
-            server_version = Version(access.access(pool.open(access.filepath).json))
+            version_access = FileAccessField(server_info["version"]["value"])
+            server_version = Version(version_access.access(pool.open(version_access.filepath).json))
         # game version detection for dependency
         if "auto_update" in server_info:
             # Check if server dependencies are ready
@@ -65,7 +65,7 @@ def main():
                                    "Server has unknown dependency, server dependency file might have a typo!")
                             continue
                         software = software_objects[dependency]
-                        if (not current_game_version.fulfills(software.requirements)) or (not server_version.get_next_minor().fulfills(software.requirements)):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
+                        if not current_game_version.fulfills(software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
                             ready = False  # Plugin incompatibility found, abort
                             if dependency in server_info["auto_update"]["blocking"]:
                                 diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][dependency]["since"]
@@ -80,7 +80,11 @@ def main():
 
                     if ready:  # Ready to version increment!
                         changed = True
-                        server_info["version"] = current_game_version.string()
+                        if server_info["version"]["type"] == "version": # Save version as string
+                            server_info["version"]["value"] = server_version.string()
+                        else:
+                            version_access = FileAccessField(server_info["version"])
+                            version_access.update(pool.open(version_access.filepath).json, server_version.string())
                         server_info["auto_update"]["blocking"] = []
                         cli.success(
                             "Server " + server_name + " updated from " + server_version.string() + " to " + current_game_version.string())

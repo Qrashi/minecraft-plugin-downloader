@@ -17,7 +17,7 @@ class FileAccessField:
             self.filepath = field["file"]
             self.access_field = field["access"]
 
-    def access(self, json: dict):
+    def access(self, json: dict) -> Union[dict, str, int, list]:
         """
         Accesses a dict according to the URLAccessField rules.
         :param json: The json to access
@@ -33,3 +33,21 @@ class FileAccessField:
                 report("FileAccesField accessing function", 10, "Could not access Json, some error occured. URL: " + self.filepath, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
                 return None
         return access
+
+    def update(self, json: dict, new_value: Union[dict, str, int, list]):
+        """
+        Accesses a dict according to URLAccessField rules and updates it.
+        :param json:
+        :param new_value:
+        :return:
+        """
+        if self.access_field is None:
+            json = new_value
+        access = json
+        for to_access in dict_str(self.access_field):
+            try:
+                access = access[to_access]
+            except Exception as e:
+                report("FileAccesField accessing function", 10, "Could not access Json, some error occured. URL: " + self.filepath, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
+                return
+        access = new_value
