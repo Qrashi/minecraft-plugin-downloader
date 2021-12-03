@@ -14,7 +14,7 @@ if __name__ == "__main__":
     print("Blas mir die huf auf")
 
 DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
-STATIC_VERSIONS = [Version("1.0", enable_database_check=False)]
+STATIC_VERSIONS = [Version("1.0")]
 
 if pool.open("data/versions.json").json["last_check"] == 0:
     # Create "software" folder
@@ -22,7 +22,7 @@ if pool.open("data/versions.json").json["last_check"] == 0:
 
 if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > pool.open("data/config.json")\
                                                                             .json["version_check_interval"]:
-    current_version = Version(pool.open("data/versions.json").json["current_version"], enable_database_check=False)
+    current_version = Version(pool.open("data/versions.json").json["current_version"])
     # The version might not exist in the versions database because the database is nonexistent!
 
     url_access_field = URLAccessField(pool.open("data/config.json").json["newest_game_version"])
@@ -34,11 +34,11 @@ if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > poo
         versions_json.json["versions"] = []
         remote = current_version
         for version in versions_online:
-            version = Version(version, enable_database_check=False)  # Again, the versions database might not exist at this point
+            version = Version(version)  # Again, the versions database might not exist at this point
             versions_json.json["versions"].append(version.string())
             if version.is_higher(remote):
                 remote = version
-            major_only = Version((version.major, ""), enable_database_check=False).string()
+            major_only = Version((version.major, "")).string()
             if major_only not in versions_json.json["versions"]:
                 versions_json.json["versions"].append(major_only)
         for static_version in STATIC_VERSIONS:
