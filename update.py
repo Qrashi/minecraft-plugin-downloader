@@ -21,7 +21,7 @@ def main():
     servers = pool.open("data/servers.json")
     all_software = software_file.json
     config = pool.open("data/config.json").json
-    cli.load("Downloading new software...", vanish=True)
+    cli.success("Loaded configurations...")
 
     if "git_auto_update" not in config:
         config["git_auto_update"] = True
