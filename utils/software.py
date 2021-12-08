@@ -1,23 +1,26 @@
 from os import stat
 
 from .cli_provider import cli
-from .error import report
-from .file_pool import pool
-from .files import generate
-from .sha244utils import getHash
+from .errors import report
+from .files import pool
+from .io import generate
+from .sha244 import get_hash
 from .source import Source
-from .version import VersionRangeRequirement
+from .versions import VersionRangeRequirement
+from .dict_utils import enabled
 
 
 class Software:
     def has_source(self) -> bool:
         sources = pool.open("data/sources.json").json
-        return self.software in sources
+        if self.software in sources:
+            return enabled(sources[self.software])
+        return False
 
     def __init__(self, software):
         software_json = pool.open("data/software.json").json
         if software not in software_json:
-            report("software class", 9, "Typo in config: Could not find specified software, exiting!",
+            report(9, "software class", "Typo in config: Could not find specified software, exiting!",
                    additional="Provided software: " + software)
             exit()
         self.software = software
@@ -35,14 +38,14 @@ class Software:
         Retrieve hash for local file
         :return:
         """
-        return getHash(self.file)
+        return get_hash(self.file)
 
     def needs_update(self, other: str) -> bool:
         """
         Checks if the remote file hash is equal to the current hash
         :return bool: If there has been a file change
         """
-        return self.hash != getHash(other)
+        return self.hash != get_hash(other)
 
     def retrieve_newest(self) -> tuple[bool, str]:
         """
@@ -71,7 +74,7 @@ class Software:
         try:
             generate(destination_path, default="")
         except Exception as e:
-            report("copy - " + self.software + " > " + server, self.severity,
+            report(self.severity, "copy - " + self.software + " > " + server,
                    "Could not generate destination file at " + self.file + "! Could be a permission error.",
                    exception=e)
             progress.fail("Could not copy " + self.software + " to " + server + ": ")
@@ -93,8 +96,8 @@ class Software:
                     progress.update((copied / total * 100))
                 progress.complete("Updated " + self.software + "!")
         except Exception as e:
-            report("copy - " + self.software + " > " + server, self.severity,
-                   "Copy process did not finish: ", exception=e)
+            report(self.severity, "copy - " + self.software + " > " + server, "Copy process did not finish: ",
+                   exception=e)
             progress.fail("Update failed: ")
             print(e)
             cli.warn("Skipping copy")

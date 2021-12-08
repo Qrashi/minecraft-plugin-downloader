@@ -1,5 +1,5 @@
 from typing import Union, Dict
-from .error import report
+from .errors import report
 
 
 def dict_str(field: Union[list, str]) -> list:
@@ -30,6 +30,10 @@ class URLAccessField:
             try:
                 access = access[to_access]
             except Exception as e:
-                report("JsonField accessing function", 10, "Could not access Json, some error occured. URL: " + self.url, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
+                report(10, "JsonField accessing function",
+                       "Could not access json, some error occurred. URL: " + self.url,
+                       additional="dictionary: " + str(json) + " ; accessing " + str(
+                           dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access,
+                       exception=e)
                 return None
         return access

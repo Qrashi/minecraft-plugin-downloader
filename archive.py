@@ -1,5 +1,5 @@
 from utils.cli_provider import cli
-from utils.jsonFile import JsonFile
+from utils.json import JsonFile
 
 
 def main():
@@ -43,5 +43,5 @@ if __name__ == "__main__":
         cli.fail("Aborted, no data saved!")
         exit()
 else:
-    print("Bitte blasen Sie mir die Huf auf!")
+    print("ERROR: File was imported!")
     exit()

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Union, Dict, Tuple
 
-from utils.error import report
-from utils.file_pool import pool
+from utils.errors import report
+from utils.files import pool
 
 versions = pool.open("data/versions.json").json["versions"]
 
@@ -12,9 +12,9 @@ def is_valid(version: str, report_errors=False, terminate=False) -> bool:
     def error(reason, will_continue):
         if report_errors:
             if will_continue:
-                report("Version integrity checker", 9, reason, additional="Program will continue despite error")
+                report(9, "Version integrity checker", reason, additional="Program will continue despite error")
             else:
-                report("Version integrity checker", 9, reason, additional="Program terminated.")
+                report(9, "Version integrity checker", reason, additional="Program terminated.")
                 if terminate:
                     print("Error: Version \"" + version + "\" NOT valid! Program stopped, files NOT saved.")
                     exit()

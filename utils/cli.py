@@ -1,33 +1,41 @@
 from time import sleep
 from typing import Callable
 from math import floor
-from .jsonFile import JsonFile
+from .json import JsonFile
 
 try:
     from colorama import Fore, Style, init
 
     init()  # Required in some cases for windows systems
-except Exception as e:
+except Exception as e_first:
     print("Error: Could not import / initialize colorama! Please install all dependencies (how-to in README.md)!")
-    print(e)
-    from .error import report
-
-    report("CLI", 10, "Could not start CLI output provider, dependencies missing!", exception=e)
-    exit(1)
+    print(e_first)
+    print("Attempting to install colorama")
+    import os
+    os.system("pip install -r requirements.txt")
+    try:
+        from colorama import Fore, Style, init
+        init()
+        print("Successfully installed dependencies, resuming...")
+    except Exception as e_second:
+        print("Could not auto-install dependencies. Please follow the instructions in README.md")
+        from .errors import report
+        report(10, "CLI", "Could not start CLI output provider, dependencies missing!", exception=str(e_first) + "\nAfter attempting to auto-install: " + str(e_second))
+        exit(1)
 
 try:
     from os import get_terminal_size
 
     terminal_size = get_terminal_size().columns - 5
-except:
+except Exception as e:
     config = JsonFile("data/config.json").json
     if "terminal_fallback_size" in config:
         terminal_size = config["terminal_fallback_size"]
     else:
-        from .error import report
+        from .errors import report
 
-        report("CLI", 10, "Could not retrieve terminak size, aborting! (No fallback size set in config.json)",
-               additional="Add \"terminal_fallback_size\": 30 (minimzum us 21) to \"data/config.json\"")
+        report(10, "CLI", "Could not retrieve terminal size, aborting! (No fallback size set in config.json)",
+               additional="Add \"terminal_fallback_size\": 30 (minimum us 21) to \"data/config.json\"", exception=e)
         print("Error: Could not retrieve terminal size.")
         print("Please configure a terminal size in config.json")
         print("\n1. Open config.json in data")
@@ -40,6 +48,7 @@ except:
 
 if terminal_size < 20:
     print(Fore.RED + Style.BRIGHT + "Error: Unsupported terminal size, output might look ugly!" + Style.RESET_ALL)
+    sleep(2)
     terminal_size = 1000
 
 config = JsonFile("data/config.json").json
@@ -50,26 +59,26 @@ else:
 loading_big = ["|#   |", "| #  |", "|  # |", "|   #|", "|   #|", "|  # |", "| #  |", "|#   |"]
 
 
-def cut_string(to_split: str, max: int) -> str:
+def cut_string(to_split: str, maximum: int) -> str:
     """
     Splits a sentence into two parts.
     :param to_split: The string to split
-    :param max: Where to start splitting
+    :param maximum: Where to start splitting
     :return:
     """
-    for i in range(0, len(to_split) - max):
-        index = max - i
+    for i in range(0, len(to_split) - maximum):
+        index = maximum - i
         if to_split[index] == " ":
             # Split here
             if i <= 1:
                 continue
             return to_split[:index] + ("." * min(3, i))
-    return to_split[:max - 3] + "..."
+    return to_split[:maximum - 3] + "..."
 
 
 class CLIApp:
 
-    def print(self, color: str, symbol: str, message: str, vanish: bool, enable_len_check=True):
+    def print(self, color: str, symbol: str, message: str, vanish: bool, enable_len_check: bool = True):
         if vanish:
             end = ""
         else:
@@ -80,7 +89,7 @@ class CLIApp:
             message = cut_string(message, terminal_size - 8)
         print('\r\x1b[2K\r' + color + symbol + self.__sender + color + message, end=end + Style.RESET_ALL)
 
-    def update_sender(self, sender):
+    def update_sender(self, sender: str):
         if len(sender) > 3:
             insert = sender[:2]
         elif len(sender) == 1:
@@ -94,33 +103,33 @@ class CLIApp:
     def get_sender(self):
         return self.__sender
 
-    def __init__(self, sender):
+    def __init__(self, sender: str):
         self.__sender = "ERR"
         self.update_sender(sender)
 
-    def ask(self, message, vanish=False) -> str:
+    def ask(self, message: str, vanish: bool = False) -> str:
         self.print(Fore.MAGENTA, "?", message, True)
         result = input("")
         if vanish:
             print('\x1b[1A\x1b[2K', end="")
         return result
 
-    def info(self, message: str, vanish=False):
+    def info(self, message: str, vanish: bool = False):
         self.print(Fore.LIGHTBLUE_EX, "i", message, vanish)
 
-    def warn(self, message: str, vanish=False):
+    def warn(self, message: str, vanish: bool = False):
         self.print(Fore.YELLOW, "!", message, vanish)
 
-    def success(self, message: str, vanish=False):
+    def success(self, message: str, vanish: bool = False):
         self.print(Fore.GREEN, "✔", message, vanish)
 
-    def fail(self, message: str, vanish=False):
+    def fail(self, message: str, vanish: bool = False):
         self.print(Fore.RED, "!", Fore.RED + message, vanish)
 
-    def say(self, message: str, vanish=False):
+    def say(self, message: str, vanish: bool = False):
         self.print("", "#", message, vanish)
 
-    def load(self, message: str, vanish=False):
+    def load(self, message: str, vanish: bool = False):
         self.print(Fore.BLUE, ">", message, vanish)
 
     def simple_wait_fixed_time(self, message: str, end_message: str, time: int, vanish: bool = False, green: bool = False):
@@ -142,7 +151,7 @@ class CLIApp:
         else:
             self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
 
-    def progress_bar(self, message, vanish=False):
+    def progress_bar(self, message, vanish: bool = False):
         class ProgressBar:
             def calculate_multiplier(self):
                 space_left = terminal_size - 8 - len(
@@ -152,40 +161,37 @@ class CLIApp:
                     return
                 self.__multiplier = round(floor(space_left * 0.1) * 0.1, 1)  # Round to lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
 
-            def __init__(self, print):
-                self.__print = print
+            def __init__(self, print_function):
+                self.__print_function = print_function
                 self.__message = message
                 self.__multiplier = 0
                 self.calculate_multiplier()
                 self.update(0)
 
-            def update_message(self, message: str, done: int = 0):
-                self.__message = message
+            def update_message(self, updated_message: str, done: int = 0):
+                self.__message = updated_message
                 self.calculate_multiplier()
                 self.update(done)
 
-            def fail(self, message: str, ):
-                self.__print(Fore.RED, "!", message, False)
+            def fail(self, fail_message: str, ):
+                self.__print_function(Fore.RED, "!", fail_message, False)
                 # A failure will always stay in CLI
 
-            def complete(self, message: str, green: bool = False):
+            def complete(self, complete_message: str, green: bool = False):
                 if green:
-                    self.__print(Fore.GREEN, "✔", message, vanish)
+                    self.__print_function(Fore.GREEN, "✔", complete_message, vanish)
                 else:
-                    self.__print(Fore.CYAN, "✔", message, vanish)
+                    self.__print_function(Fore.CYAN, "✔", complete_message, vanish)
 
             def update(self, done):
                 done_modified = int(done * self.__multiplier)
-                self.__print(Fore.CYAN, "⤓", "[" + (
-                        '=' * done_modified) + (' ' * int(
-                    100 * self.__multiplier - done_modified)) + '] ' + self.__message, True, enable_len_check=False)
+                self.__print_function(Fore.CYAN, "⤓", "[" + (
+                        '=' * done_modified) + (' ' * int(100 * self.__multiplier - done_modified)) + '] ' + self.__message, True, enable_len_check=False)
 
         return ProgressBar(self.print)
 
     def wait_until_event(self, message: str, end_message: str, vanish: bool = False, green: bool = False) -> Callable:
-
         from threading import Thread, Event
-
         condition = Event()
 
         def display_loading():
@@ -209,8 +215,8 @@ class CLIApp:
         self.print(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
         Thread(target=display_loading, args=()).start()
 
-        def endfunction():
+        def end():
             condition.set()
             sleep(0.01)
 
-        return endfunction
+        return end

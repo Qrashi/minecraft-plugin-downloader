@@ -1,3 +1,3 @@
-from .cli_app import CLIApp
+from .cli import CLIApp
 
 cli = CLIApp("UPD")

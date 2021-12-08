@@ -1,8 +1,8 @@
 import os
 
-from utils.cli_app import CLIApp
-from utils.file_pool import pool
-from utils.version import is_valid, Version, VersionRangeRequirement
+from utils.cli import CLIApp
+from utils.files import pool
+from utils.versions import is_valid, Version, VersionRangeRequirement
 
 
 def main():

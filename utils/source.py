@@ -7,29 +7,22 @@ from requests import get
 
 from .URLAccessField import URLAccessField
 from .cli_provider import cli
-from .error import report
+from .dict_utils import enabled
+from .errors import report
 from .events import report as report_event
-from .file_pool import pool
-from .version import Version, is_valid, VersionRangeRequirement
-from .task_executor import execute
-from .files import abs_filename
+from .files import pool
+from .io import abs_filename
+from .tasks import execute
+from .versions import Version, VersionRangeRequirement
 
 FOLDER = pool.open("data/config.json").json["sources_folder"]
-
-
-def check_enabled(json: dict) -> bool:
-    if "enabled" in json:
-        return json["enabled"]
-    return True
-
-# TODO: Use check enabled in almost all cases
 
 
 class Source:
     def __init__(self, source: str):
         sources = pool.open("data/sources.json").json
         if source not in sources:
-            report("source class", 9, "Typo in config: Could not find specified source, terminating!",
+            report(9, "source class", "Typo in config: Could not find specified source, terminating!",
                    additional="Provided source: " + source)
             exit()
 
@@ -54,112 +47,120 @@ class Source:
 
         self.newest_replacer = replace
 
-    def check_compatibility(self):
+    def check_compatibility(self) -> bool:
         if "compatibility" in self.config:
-            access = URLAccessField(self.config["compatibility"]["remote"])
-            try:
-                response = get(access.url)  # Replace all placeholders in the string and then
-            except Exception as e:  # Error while fetching
-                report("version check -" + self.source, self.severity,
-                       "Could not fetch latest version information!",
-                       additional="Last update: " + self.last_check, exception=e)
-                cli.fail("Could not retrieve newest version for " + self.source + ":")
-                print(e)
-                return
+            if enabled(self.config["compatibility"]):
+                access = URLAccessField(self.config["compatibility"]["remote"])
+                try:
+                    response = get(access.url)  # Replace all placeholders in the string and then
+                except Exception as e:  # Error while fetching
+                    report(self.severity, "version check -" + self.source,
+                           "Could not fetch latest version information!",
+                           additional="Last update: " + self.last_check, exception=e)
+                    cli.fail("Could not retrieve newest version for " + self.source + ":")
+                    print(e)
+                    return False
 
-            if response.status_code != 200:  # Server side error
-                report("download -" + self.source, self.severity,
-                       "Error while fetching latest build information: Status code " + str(response.status_code),
-                       additional="Last update: " + self.last_check)
-                cli.fail("Could not retrieve newest version for " + self.source + " - status code " + str(
-                    response.status_code))
-                return
+                if response.status_code != 200:  # Server side error
+                    report(self.severity, "download -" + self.source,
+                           "Error while fetching latest build information: Status code " + str(response.status_code),
+                           additional="Last update: " + self.last_check)
+                    cli.fail("Could not retrieve newest version for " + self.source + " - status code " + str(
+                        response.status_code))
+                    return False
 
+                all_software = pool.open("data/software.json").json
+                previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
 
-            all_software = pool.open("data/software.json").json
-            previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
+                field = access.access(response.json())
+                if type(field) == str:
+                    newest = Version(field)
+                    lower_newest = Version(field)
+                    if self.config["compatibility"]["behaviour"].endswith("|major"):
+                        newest = Version((newest.major, "99"))
+                        lower_newest = Version((newest.major, ""))
+                    if self.config["compatibility"]["behaviour"].startswith("extend|"):
+                        compatibility = VersionRangeRequirement((previous_compatibility.minimum, newest))
+                    else:  # precise mode
+                        compatibility = VersionRangeRequirement((lower_newest, newest))
+                elif type(field) == list:
+                    if len(field) == 0:
+                        report(self.severity, "Compatibility checker",
+                               self.source + " has NO compatibilities (list is empty) (" + str(field) + ")",
+                               additional=self.last_check)
+                        cli.fail("Could not fetch compatibility for " + self.source + " - no compatibilities found!")
 
-            field = access.access(response.json())
-            if type(field) == str:
-                newest = Version(field)
-                lower_newest = Version(field)
-                if self.config["compatibility"]["behaviour"].endswith("|major"):
-                    newest = Version((newest.major), "99")
-                    lower_newest = Version((newest.major), "")
-                if self.config["compatibility"]["behaviour"].startswith("extend|"):
-                    compatibility = VersionRangeRequirement((previous_compatibility.minimum, newest))
-                else:  # precise mode
-                    compatibility = VersionRangeRequirement((lower_newest, newest))
-            elif type(field) == list:
-                if len(field) == 0:
-                    report("Compatibility checker", self.severity,
-                           self.source + " has NO compatibilities (list is empty) (" + str(field) + ")",
-                           additional=self.last_check)
-                    cli.fail("Could not fetch compatibility for " + self.source + " - no compatibilities found!")
-
-                # Retrieve newest and oldest version
-                newest = Version("1.0")
-                for version in field:
-                    version_obj = Version(version)
-                    if version_obj.is_higher(newest):
-                        newest = version_obj
-                # Retrieve lowest
-                lowest = newest
-                for version in field:
-                    version_obj = Version(version)
-                    if version_obj.is_lower(lowest):
-                        lowest = version_obj
-                maxed_newest = newest
-                if self.config["compatibility"]["behaviour"].endswith("|major"):
-                    maxed_newest = Version((newest.major, "99"))
-                if self.config["compatibility"]["behaviour"].startswith("max|"):
-                    if self.config["compatibility"]["behaviour"].endswith("|major"):  # all of the max major
-                        compatibility = VersionRangeRequirement((Version((maxed_newest.major, "")), maxed_newest))  # Major version compatible
+                    # Retrieve newest and oldest version
+                    newest = Version("1.0")
+                    for version in field:
+                        version_obj = Version(version)
+                        if version_obj.is_higher(newest):
+                            newest = version_obj
+                    # Retrieve lowest
+                    lowest = newest
+                    for version in field:
+                        version_obj = Version(version)
+                        if version_obj.is_lower(lowest):
+                            lowest = version_obj
+                    maxed_newest = newest
+                    if self.config["compatibility"]["behaviour"].endswith("|major"):
+                        maxed_newest = Version((newest.major, "99"))
+                    if self.config["compatibility"]["behaviour"].startswith("max|"):
+                        if self.config["compatibility"]["behaviour"].endswith("|major"):  # all of the max major
+                            compatibility = VersionRangeRequirement(
+                                (Version((maxed_newest.major, "")), maxed_newest))  # Major version compatible
+                        else:
+                            compatibility = VersionRangeRequirement((maxed_newest, maxed_newest))
+                    elif self.config["compatibility"]["behaviour"].startswith("extend|"):
+                        compatibility = VersionRangeRequirement(
+                            (previous_compatibility.minimum, maxed_newest))  # Previous version compatible
                     else:
-                        compatibility = VersionRangeRequirement((maxed_newest, maxed_newest))
-                elif self.config["compatibility"]["behaviour"].startswith("extend|"):
-                    compatibility = VersionRangeRequirement((previous_compatibility.minimum, maxed_newest))  # Previous version compatible
-                elif self.config["compatibility"]["behaviour"].startswith("all"):
-                    compatibility = VersionRangeRequirement((lowest, maxed_newest))
+                        # Must be "all"
+                        compatibility = VersionRangeRequirement((lowest, maxed_newest))
+                else:
+                    report(self.severity, "Compatibility checker",
+                           "Compatibility is not of type array or string! type: " + str(field),
+                           additional=self.last_check)
+                    cli.fail(
+                        "Could not fetch compatibility for " + self.source + " - no list of compatibilities or compatibility found!")
+                    return False
+
+                if not previous_compatibility.matches(compatibility):
+                    all_software[self.source]["requirements"] = compatibility.dict()
+                    cli.success("Detected version increment for " + self.source + "!")
+                    report_event("Compatibility checker",
+                                 "Compatibility for " + self.source + " has been changed to " + compatibility.string() + "!")
+
+                def replace(string: str) -> str:
+                    replaced = string.replace("%newest_version%", newest.string())
+                    replaced = replaced.replace("%newest_major%", "1." + str(newest.major))
+                    replaced = replaced.replace("%newest_minor%", "." + str(newest.minor))
+                    return replaced
+
+                self.newest_replacer = replace
+                return True
             else:
-                report("Compatibility checker", self.severity,
-                       "Compatibility is not of type array or string! type: " + str(field), additional=self.last_check)
-                cli.fail(
-                    "Could not fetch compatibility for " + self.source + " - no list of compatibilities or compatibility found!")
-                return
-
-            if not previous_compatibility.matches(compatibility):
-                all_software[self.source]["requirements"] = compatibility.dict()
-                cli.success("Detected version increment for " + self.source + "!")
-                report_event("Compatibility checker",
-                             "Compatibility for " + self.source + " has been changed to " + compatibility.string() + "!")
-
-            def replace(string: str) -> str:
-                replaced = string.replace("%newest_version%", newest.string())
-                replaced = replaced.replace("%newest_major%", "1." + str(newest.major))
-                replaced = replaced.replace("%newest_minor%", "." + str(newest.minor))
-                return replaced
-
-            self.newest_replacer = replace
+                # Use previous compatiblility
+                return True
 
     def get_newest_build(self) -> Union[int, str]:
         url_field = URLAccessField(self.config["build"]["remote"])
         try:
             response = get(self.newest_replacer(url_field.url))  # Replace all placeholders in the string and then
         except Exception as e:  # Error while fetching
-            report("fetching build information -" + self.source, self.severity,
-                   "Could not fetch latest build information!",
-                   additional="Last update: " + self.last_check, exception=e)
+            report(self.severity, f"fetching build information - {self.source}",
+                   "Could not fetch latest build information!", additional=f"Last update: {self.last_check}",
+                   exception=e)
             cli.fail("Could not fetch latest build information: ")
             print(e)
             cli.warn("Skipping...")
             return self.config["build"]["local"]
 
         if response.status_code != 200:  # Server side error or typo
-            report("fetching build information -" + self.source, self.severity,
-                   "Error while fetching latest build information: Status code " + str(response.status_code),
-                   additional="Last update: " + self.last_check)
-            cli.fail("Could not fetch latest build information - status code " + str(response.status_code))
+            report(self.severity, f"fetching build information - {self.source}",
+                   f"Error while fetching latest build information: Status code {response.status_code}",
+                   additional=f"Last update: {self.last_check}")
+            cli.fail(f"Could not fetch latest build information - status code {response.status_code}")
             cli.warn("Skipping...")
             return self.config["build"]["local"]
 
@@ -171,7 +172,8 @@ class Source:
             if string_to_int.isdigit():
                 return int(string_to_int)
             elif throw_error:
-                report("fetching builds - " + self.source, self.severity, "Expected field of type str, got " + str(string_to_int), additional=self.last_check)
+                report(self.severity, "fetching builds - " + self.source,
+                       "Expected field of type str, got " + str(string_to_int), additional=self.last_check)
                 cli.fail("Could not fetch latest build information, expected string, got " + str(string_to_int))
                 return self.config["build"]["local"]
                 # Wont download newer version if the newer build is the local build
@@ -188,8 +190,10 @@ class Source:
             # List of builds MUST be ints to compare
             if len(field) == 0:
                 # No builds!
-                cli.fail("Could not fetch latest build for " + self.source + ", there are no builds (list of builds is empty)")
-                report("download - " + self.source, self.severity, "List of builds is EMPTY (" + str(field), additional=self.last_check)
+                cli.fail(
+                    "Could not fetch latest build for " + self.source + ", there are no builds (list of builds is empty)")
+                report(self.severity, "download - " + self.source, "List of builds is EMPTY (" + str(field),
+                       additional=self.last_check)
             if len(field) == 1:
                 return _int(field[0], throw_error=True)
             builds = []
@@ -210,38 +214,43 @@ class Source:
             try:
                 response = get((self.newest_replacer(access.url)).replace("%build%", str(build)))
             except Exception as e:
-                cli.fail("Could not fetch artifact name for build " + str(build) + " of " + self.source + " error while initiating connection")
-                report("download - " + self.source, self.severity, "Exception while fetching artifact name!", additional="Last update: " + self.last_check, exception=e)
+                cli.fail("Could not fetch artifact name for build " + str(
+                    build) + " of " + self.source + " error while initiating connection")
+                report(self.severity, "download - " + self.source, "Exception while fetching artifact name!",
+                       additional="Last update: " + self.last_check, exception=e)
                 return False
             if response.status_code != 200:
-                cli.fail("Could not fetch artifact name for build " + str(build) + " of " + self.source + " status code " + str(response.status_code))
-                report("download - " + self.source, self.severity, "Exception while fetching artifact name - code " + str(response.status_code),
+                cli.fail("Could not fetch artifact name for build " + str(
+                    build) + " of " + self.source + " status code " + str(response.status_code))
+                report(self.severity, "download - " + self.source,
+                       "Exception while fetching artifact name - code " + str(response.status_code),
                        additional="Last update: " + self.last_check)
                 return False
             try:
                 artifact = access.access(response.json())
             except Exception as e:
                 cli.fail("Error while retrieving artifact name for build " + str(build) + " of " + self.source + "!")
-                report("download - " + self.source, self.severity,
-                       "Exception while accessing json!",
+                report(self.severity, "download - " + self.source, "Exception while accessing json!",
                        additional="Last update: " + self.last_check, exception=e)
                 return False
         else:
             artifact = ""
 
         try:
-            response = get(((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build))).replace("%artifact%", artifact),
-                           stream=True, allow_redirects=True, headers={"User-Agent": "Dependency downloader"})
+            response = get(
+                ((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build))).replace(
+                    "%artifact%", artifact),
+                stream=True, allow_redirects=True, headers={"User-Agent": "Dependency downloader"})
         except Exception as e:
             cli.fail("Could not start download of " + self.source + " - aborting")
-            report("download - " + self.source, self.severity, "Exception while downloading!",
+            report(self.severity, "download - " + self.source, "Exception while downloading!",
                    additional="Last update: " + self.last_check, exception=e)
             return False
         if response.status_code != 200:
             cli.fail(
                 "Failure while downloading " + self.source + " from " + self.server + " - status code " + str(
                     response.status_code) + " - aborting download")
-            report("download - " + self.source, self.severity,
+            report(self.severity, "download - " + self.source,
                    "Download finished with code " + str(response.status_code),
                    additional="Last update: " + self.last_check)
             return False
@@ -255,7 +264,7 @@ class Source:
                 except Exception as e:
                     progress.fail("Error while writing to disk: ")
                     print(e)
-                    report("download - " + self.source, self.severity, "Could not write to disk!",
+                    report(self.severity, "download - " + self.source, "Could not write to disk!",
                            additional="Last update: " + self.last_check, exception=e)
                     return False
             else:
@@ -270,19 +279,20 @@ class Source:
                 except Exception as e:
                     progress.fail("Error while writing chunk to disk: ")
                     print(e)
-                    report("download - " + self.source, self.severity, "Could not write chunk to disk!",
+                    report(self.severity, "download - " + self.source, "Could not write chunk to disk!",
                            additional="Last update: " + self.last_check, exception=e)
                     try:
                         remove(FOLDER + "/" + self.file + ".tmp")
                     except Exception as e:
                         cli.fail("Error while removing temporary file: (NOT-FATAL)")
                         print(e)
-                        report("download - clean up failure " + self.source, int(self.severity / 2), "Could not delete temporary download file!",
+                        report(int(self.severity / 2), "download - clean up failure " + self.source,
+                               "Could not delete temporary download file!",
                                additional="Not deleted: " + self.file + ".tmp", exception=e)
 
                     return False
-        if "tasks" in self.config:
-            if check_enabled(self.config["tasks"]):
+        if "tasks" in self.config and enabled(self.config["tasks"]):
+            if enabled(self.config["tasks"]):
                 # Generate temporary directory
                 progress.update_message("Initializing tasks")
                 tmp_dir = abs_filename(FOLDER + "/task-" + self.source.replace(" ", "_") + "-build" + str(build))
@@ -298,31 +308,33 @@ class Source:
                         except Exception as e:
                             cli.fail("Error while removing temporary downloaded file: (NOT-FATAL)")
                             print(e)
-                            report("download - clean up after task failure" + self.source, int(self.severity / 2),
+                            report(int(self.severity / 2), f"download - clean up after task failure {self.source}",
                                    "Could not delete temporary downloaded file!",
-                                   additional="Not deleted: " + self.file + ".tmp", exception=e)
+                                   additional=f"Not deleted: {self.file}.tmp", exception=e)
                         try:
                             rmtree(tmp_dir)
                         except Exception as e:
                             cli.fail("Error while removing temporary task directory after failure: (NOT-FATAL)")
                             print(e)
-                            report("download - clean up temporary directory after task failure" + self.source, int(self.severity / 2),
-                                   "Could not delete temporary directory!",
-                                   additional="Not deleted: " + tmp_dir, exception=e)
+                            report(int(self.severity / 2),
+                                   f"download - clean up temporary directory after task failure ({self.source})",
+                                   "Could not delete temporary directory!", additional=f"Not deleted: {tmp_dir}",
+                                   exception=e)
 
                 try:
                     makedirs(tmp_dir, exist_ok=True)
                 except Exception as e:
                     cli.fail("Could not initialize temporary task directory!")
                     print(e)
-                    report("download - create temporary task directory " + self.source, self.severity, "Could not create directory", additional="Last update: " + self.last_check, exception=e)
+                    report(self.severity, "download - create temporary task directory " + self.source,
+                           "Could not create directory", additional="Last update: " + self.last_check, exception=e)
                     if self.config["tasks"]["cleanup"]:
                         try:
                             remove(FOLDER + "/" + self.file + ".tmp")
                         except Exception as e:
                             cli.fail("Error while removing temporary downloaded file: (NOT-FATAL)")
                             print(e)
-                            report("download - clean up after task failure" + self.source, int(self.severity / 2),
+                            report(int(self.severity / 2), "download - clean up after task failure" + self.source,
                                    "Could not delete temporary downloaded file!",
                                    additional="Not deleted: " + self.file + ".tmp", exception=e)
                     return False  # Not updated.
@@ -334,7 +346,8 @@ class Source:
                     except Exception as e:
                         progress.fail("Error while copying temporary file to temporary folder: ")
                         print(e)
-                        report("copy - " + self.source, self.severity, "Could not copy downloaded files into temporary task directory!",
+                        report(self.severity, "copy - " + self.source,
+                               "Could not copy downloaded files into temporary task directory!",
                                additional="Last update: " + self.last_check, exception=e)
                         handle_error()
                         return False  # Not updated.
@@ -346,7 +359,8 @@ class Source:
 
                 for task in self.config["tasks"]["tasks"]:
                     progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
-                    if not execute(task, tmp_dir, replace, FOLDER + "/" + self.file + ".tmp", self.source, self.last_check, self.severity):
+                    if not execute(task, tmp_dir, replace, FOLDER + "/" + self.file + ".tmp", self.source,
+                                   self.last_check, self.severity):
                         handle_error()
                         return False
 
@@ -356,10 +370,10 @@ class Source:
                 except Exception as e:
                     cli.fail("Error while removing temporary: (NOT-FATAL)")
                     print(e)
-                    report("tasks - clean up temporary directory after task completed" + self.source,
-                           int(self.severity / 2),
-                           "Could not delete temporary directory! (NON FATAL)",
-                           additional="Not deleted: " + tmp_dir, exception=e)
+                    report(int(self.severity / 2),
+                           "tasks - clean up temporary directory after task completed" + self.source,
+                           "Could not delete temporary directory! (NON FATAL)", additional="Not deleted: " + tmp_dir,
+                           exception=e)
 
         progress.update_message("Cleaning up...")
         progress.update(5)
@@ -368,7 +382,7 @@ class Source:
         except Exception as e:
             progress.fail("Error while copying downloaded file: ")
             print(e)
-            report("copy - " + self.source, self.severity, "Could not copy downloaded files!",
+            report(self.severity, "copy - " + self.source, "Could not copy downloaded files!",
                    additional="Last update: " + self.last_check, exception=e)
             return False
         progress.update(50)
@@ -377,7 +391,7 @@ class Source:
         except Exception as e:
             progress.fail("Error while removing downloaded file: (NOT-FATAL)")
             print(e)
-            report("download - " + self.source, int(self.severity / 2), "Could not delete temporary files!",
+            report(int(self.severity / 2), "download - " + self.source, "Could not delete temporary files!",
                    additional="Not deleted: " + self.file + ".tmp", exception=e)
             return True
 
@@ -386,13 +400,15 @@ class Source:
 
     def update(self):
         checked = False
-        if "%newest_" in URLAccessField(self.config["build"]["remote"]).url:  # Check if newest build request requires version data, and update if so
+        if "%newest_" in URLAccessField(self.config["build"][
+                                            "remote"]).url:  # Check if newest build request requires version data, and update if so
             self.check_compatibility()
             checked = True
         newest_build = self.get_newest_build()
         cli.info("Newest build for " + self.source + " is " + str(newest_build), vanish=True)
         if newest_build != self.config["build"]["local"]:
-            if not checked: self.check_compatibility()
+            if not checked:
+                self.check_compatibility()
             if self.download_build(newest_build):
                 pool.open("data/sources.json").json[self.source]["build"]["local"] = newest_build
                 cli.success("Downloaded build " + str(newest_build) + " for " + self.source + "!")

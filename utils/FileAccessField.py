@@ -1,5 +1,5 @@
 from typing import Union, Dict
-from .error import report
+from .errors import report
 
 
 def dict_str(field: Union[list, str]) -> list:
@@ -17,7 +17,7 @@ class FileAccessField:
             self.filepath = field["file"]
             self.access_field = field["access"]
 
-    def access(self, json: dict) -> Union[dict, str, int, list]:
+    def access(self, json: dict) -> Union[dict, str, int, list, None]:
         """
         Accesses a dict according to the URLAccessField rules.
         :param json: The json to access
@@ -30,7 +30,11 @@ class FileAccessField:
             try:
                 access = access[to_access]
             except Exception as e:
-                report("FileAccesField accessing function", 10, "Could not access Json, some error occured. URL: " + self.filepath, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
+                report(10, "FileAccesField accessing function",
+                       "Could not access Json, some error occured. URL: " + self.filepath,
+                       additional="dictionary: " + str(json) + " ; accessing " + str(
+                           dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access,
+                       exception=e)
                 return None
         return access
 
@@ -48,6 +52,11 @@ class FileAccessField:
             try:
                 access = access[to_access]
             except Exception as e:
-                report("FileAccesField accessing function", 10, "Could not access Json, some error occured. URL: " + self.filepath, exception=e, additional="dictionary: " + str(json) + " ; accessing " + str(dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access)
+                report(10, "FileAccesField accessing function",
+                       "Could not access Json, some error occured. URL: " + self.filepath,
+                       additional="dictionary: " + str(json) + " ; accessing " + str(
+                           dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + access,
+                       exception=e)
                 return
+        # Does this even work? TODO
         access = new_value

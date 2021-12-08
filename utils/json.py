@@ -1,10 +1,10 @@
 import json
 
-from .files import abs_filename, load
+from .io import abs_filename, load
 
 
 class JsonFile:
-    def __init__(self, filename, default="{}"):
+    def __init__(self, filename: str, default: str = "{}"):
         self.__filename = abs_filename(filename)
         json_file = load(self.__filename, default=default)
         self.json = json.load(json_file)
@@ -15,6 +15,5 @@ class JsonFile:
             self.json = json.load(json_file)
 
     def save(self):
-        json_file = load(self.__filename, mode="w")
-        json.dump(self.json, json_file, indent=4, sort_keys=True)
-        json_file.close()
+        with load(self.__filename, mode="w") as json_file:
+            json.dump(self.json, json_file, indent=4, sort_keys=True)

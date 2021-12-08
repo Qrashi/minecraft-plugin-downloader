@@ -1,10 +1,11 @@
 from datetime import datetime
 from json import dumps
+from typing import Union
 
-from .jsonFile import JsonFile
+from .json import JsonFile
 
 
-def report(sender: str, severity: int, reason: str, additional="", exception=Exception):
+def report(severity: int, sender: str, reason: str, additional: str = "", exception: Union[Exception, str] = "No exception provided."):
     errors = JsonFile("data/errors.json", default="[]")
 
     time = datetime.now().strftime("%d.%m %H:%M:%S")

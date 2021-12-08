@@ -1,19 +1,18 @@
 import traceback
 from subprocess import run, PIPE
 
-from utils import files
 from utils.FileAccessField import FileAccessField
 from utils.cli_provider import cli
-from utils.error import report
+from utils.errors import report
 from utils.events import report as report_event
-from utils.file_pool import pool
-from utils.info import DAYS_SINCE_EPOCH
+from utils.files import pool
 from utils.software import Software
-from utils.version import Version
+from utils.static_info import DAYS_SINCE_EPOCH
+from utils.versions import Version
 
 
 def main():
-    cli.load("Starting update, loading software data...", vanish=True)
+    cli.load(f"Starting update, loading software data...", vanish=True)
 
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
 
@@ -35,25 +34,30 @@ def main():
         if code.returncode != 0:
             # Wrong return code
             cli.fail("Could not fetch git updates - code " + str(code.returncode))
-            report("Could not fetch git updates! code: " + str(code.returncode), 10, "Shell process returned non zero error code",
+            report(10, "Could not fetch git updates! code: " + str(code.returncode),
+                   "Shell process returned non zero error code",
                    exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
         else:
+            if not code.stdout.decode('utf-8').endswith(" "):
+                # Update found
+                cli.load("Downloading updates...", vanish=True)
             code = run("git pull", stdout=PIPE, stderr=PIPE, shell=True)
             if code.returncode != 0:
                 cli.fail("Could not pull updates from git - code " + str(code.returncode))
-                report("Could not pull git updates! code: " + str(code.returncode), 10, "Shell process returned non zero error code",
-                   exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
+                report(10, "Could not pull git updates! code: " + str(code.returncode),
+                       "Shell process returned non zero error code",
+                       exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
             else:
                 if not code.stdout.decode('utf-8').endswith("up to date.\n"):
                     code = run("git log -n 1 --pretty=format:\"%H\"", stdout=PIPE, stderr=PIPE, shell=True)
                     if code.returncode != 0:
-                        cli.fail("Could not get latest git version " + str(code.returncode) + " - NON FATAL!")
-                        report("Could not get last git version! code: " + str(code.returncode), 1, "Shell process returned non zero error code",
+                        cli.fail(f"Could not get latest git version {code.returncode} - NON FATAL!")
+                        report(1, f"Could not get last git version! code: {code.returncode}",
+                               "Shell process returned non zero error code",
                                exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
                     else:
                         cli.success("Updated to - " + code.stdout.decode('utf-8'))
                         report_event("git", "Updated all files to commit " + code.stdout.decode('utf-8'))
-
 
     software_objects = {}
 
@@ -62,7 +66,7 @@ def main():
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
-        was_updated, new_hash = obj.retrieve_newest() # Retrieve the newest software, update hashes increment counter if successful
+        was_updated, new_hash = obj.retrieve_newest()  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else 0
         obj.hash = new_hash
         software_objects[software] = obj
@@ -93,16 +97,17 @@ def main():
                             # >> Typo in config
                             cli.fail(
                                 "Error while updating " + server_name + " server: required software " + dependency + " not found in software register")
-                            report("updater - " + server_name, 2,
+                            report(2, "updater - " + server_name,
                                    "Server has unknown dependency, server dependency file might have a typo!")
                             continue
                         software = software_objects[dependency]
-                        if not current_game_version.fulfills(software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
+                        if not current_game_version.fulfills(
+                                software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
                             ready = False  # Plugin incompatibility found, abort
                             if dependency in server_info["auto_update"]["blocking"]:
                                 diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][dependency]["since"]
                                 if diff >= 3:
-                                    report("updater - " + server_name, int(min(max(2, 2 + (diff * 0.2)), 5)),
+                                    report(int(min(max(2, 2 + (diff * 0.2)), 5)), "updater - " + server_name,
                                            "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment since " + str(
                                                diff) + " days",
                                            additional="Server version: " + server_version.string() + " " + dependency + " version requirement: " + software.requirements.string())
@@ -112,7 +117,7 @@ def main():
 
                     if ready:  # Ready to version increment!
                         changed = True
-                        if server_info["version"]["type"] == "version": # Save version as string
+                        if server_info["version"]["type"] == "version":  # Save version as string
                             server_info["version"]["value"] = server_version.string()
                         else:
                             version_access = FileAccessField(server_info["version"])
@@ -130,7 +135,7 @@ def main():
                 # >> Typo in config
                 cli.fail(
                     "Error while updating " + server_name + " server: required software " + dependency + " not found in software register")
-                report("updater - " + server_name, 2,
+                report(2, "updater - " + server_name,
                        "Server has unknown dependency, server dependency file might have a typo!")
                 continue
             else:
@@ -161,7 +166,9 @@ if __name__ == "__main__":
         exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
-            report("updater - main", 10, "Updater quit unexpectedly! Uncaught exception: ", exception=e, additional="Traceback: " + ''.join(traceback.format_exception(None, e, e.__traceback__)))
+            report(10, "updater - main", "Updater quit unexpectedly! Uncaught exception: ",
+                   additional="Traceback: " + ''.join(traceback.format_exception(None, e, e.__traceback__)),
+                   exception=e)
             cli.fail("ERROR: Uncaught exception: ")
             print(e)
             cli.fail("More detailed info can be found in the errors.json file")
