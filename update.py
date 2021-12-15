@@ -118,7 +118,7 @@ def main():
                     if ready:  # Ready to version increment!
                         changed = True
                         if server_info["version"]["type"] == "version":  # Save version as string
-                            server_info["version"]["value"] = server_version.string()
+                            servers[server_name]["version"]["value"] = server_version.string()
                         else:
                             version_access = FileAccessField(server_info["version"])
                             version_access.update(pool.open(version_access.filepath).json, server_version.string())
