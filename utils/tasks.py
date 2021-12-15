@@ -24,7 +24,10 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
         if "file" in task["value"]:
             # Copy the specified file to the tmp file
             try:
-                copy(directory + "/" + replace(task["value"]["file"]), final_file)
+                copy_path = replace(task["value"]["file"])
+                if not copy_path.startswith("/"):
+                    copy_path = directory + "/" + copy_path
+                copy(copy_path, final_file)
             except Exception as e:
                 cli.fail("Error while cleaning up tasks, result copy failed")
                 print(e)
