@@ -1,6 +1,6 @@
-import traceback
+import traceback, argparse
 from subprocess import run, PIPE
-
+from utils.argparser import args
 from utils.FileAccessField import FileAccessField
 from utils.cli_provider import cli
 from utils.errors import report
@@ -11,7 +11,7 @@ from utils.static_info import DAYS_SINCE_EPOCH
 from utils.versions import Version
 
 
-def main():
+def main(check_all: bool):
     cli.load(f"Starting update, loading software data...", vanish=True)
 
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
@@ -66,7 +66,8 @@ def main():
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
-        was_updated, new_hash = obj.retrieve_newest()  # Retrieve the newest software, update hashes increment counter if successful
+        was_updated, new_hash = obj.retrieve_newest(
+            check_all)  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else 0
         obj.hash = new_hash
         software_objects[software] = obj
@@ -121,7 +122,8 @@ def main():
                             servers.json[server_name]["version"]["value"] = current_game_version.string()
                         else:
                             version_access = FileAccessField(server_info["version"])
-                            version_access.update(pool.open(version_access.filepath).json, current_game_version.string())
+                            version_access.update(pool.open(version_access.filepath).json,
+                                                  current_game_version.string())
                         server_info["auto_update"]["blocking"] = []
                         cli.success(
                             "Server " + server_name + " updated from " + server_version.string() + " to " + current_game_version.string())
@@ -160,7 +162,7 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        main(args.check_all_compatibility)
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
         exit()

@@ -398,10 +398,13 @@ class Source:
         progress.complete("Updated " + self.source)
         return True
 
-    def update(self):
+    def update(self, check: bool):
         checked = False
+        if check:
+            self.check_compatibility()
+            checked = True
         if "%newest_" in URLAccessField(self.config["build"][
-                                            "remote"]).url:  # Check if newest build request requires version data, and update if so
+                                            "remote"]).url and not checked:  # Check if newest build request requires version data, and update if so
             self.check_compatibility()
             checked = True
         newest_build = self.get_newest_build()
