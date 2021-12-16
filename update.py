@@ -118,10 +118,10 @@ def main():
                     if ready:  # Ready to version increment!
                         changed = True
                         if server_info["version"]["type"] == "version":  # Save version as string
-                            servers.json[server_name]["version"]["value"] = server_version.string()
+                            servers.json[server_name]["version"]["value"] = current_game_version.string()
                         else:
                             version_access = FileAccessField(server_info["version"])
-                            version_access.update(pool.open(version_access.filepath).json, server_version.string())
+                            version_access.update(pool.open(version_access.filepath).json, current_game_version.string())
                         server_info["auto_update"]["blocking"] = []
                         cli.success(
                             "Server " + server_name + " updated from " + server_version.string() + " to " + current_game_version.string())
