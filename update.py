@@ -11,7 +11,7 @@ from utils.static_info import DAYS_SINCE_EPOCH
 from utils.versions import Version
 
 
-def main(check_all: bool):
+def main(check_all: bool, redownload: str):
     cli.load(f"Starting update, loading software data...", vanish=True)
 
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
@@ -63,11 +63,12 @@ def main(check_all: bool):
 
     cli.info("Retrieving newest versions...", vanish=True)
     updated = 0
+    check_redownload = False if redownload == "none" else True
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
         was_updated, new_hash = obj.retrieve_newest(
-            check_all)  # Retrieve the newest software, update hashes increment counter if successful
+            check_all, (check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else 0
         obj.hash = new_hash
         software_objects[software] = obj
@@ -162,7 +163,7 @@ def main(check_all: bool):
 
 if __name__ == "__main__":
     try:
-        main(args.check_all_compatibility)
+        main(args.check_all_compatibility, args.redownload)
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
         exit()

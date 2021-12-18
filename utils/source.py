@@ -127,7 +127,7 @@ class Source:
 
                 if not previous_compatibility.matches(compatibility):
                     all_software[self.source]["requirements"] = compatibility.dict()
-                    cli.success("Detected version increment for " + self.source + "!")
+                    cli.success("Detected version compatibility increment for " + self.source + "!")
                     report_event("Compatibility checker",
                                  "Compatibility for " + self.source + " has been changed to " + compatibility.string() + "!")
 
@@ -398,7 +398,7 @@ class Source:
         progress.complete("Updated " + self.source)
         return True
 
-    def update(self, check: bool):
+    def update(self, check: bool, force_retrieve: bool):
         checked = False
         if check:
             self.check_compatibility()
@@ -409,7 +409,7 @@ class Source:
             checked = True
         newest_build = self.get_newest_build()
         cli.info("Newest build for " + self.source + " is " + str(newest_build), vanish=True)
-        if newest_build != self.config["build"]["local"]:
+        if newest_build != self.config["build"]["local"] or force_retrieve:
             if not checked:
                 self.check_compatibility()
             if self.download_build(newest_build):
