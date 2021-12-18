@@ -195,10 +195,14 @@ class Source:
                 report(self.severity, "download - " + self.source, "List of builds is EMPTY (" + str(field),
                        additional=self.last_check)
             if len(field) == 1:
+                pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
+                    "%m.%d %H:%M")
                 return _int(field[0], throw_error=True)
             builds = []
             for build in field:
                 builds.append(_int(build))
+            pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
+                "%m.%d %H:%M")
             return max(builds)
 
     def download_build(self, build: int) -> bool:
