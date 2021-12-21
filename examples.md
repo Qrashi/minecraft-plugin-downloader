@@ -236,8 +236,16 @@ This can be done using tasks. The example below shows such a source.
    }
 }
 ```
+
+Please note:
+Since the release of 1.18, mojang and paper have decided not to build fatjars (jars with all libraries).
+<br> Therefore the example above will just build a paper.jar with no libaries in it.
+I have started to use a central "libraries" directory where every paper instance "loads its libaries from" (using ``-DbundlerRepoDir=/path/to/your/cache``). <br>
+I don't know if I am using this the intented way so no guarantee!
+
 As you can see, the script will
 1. Copy the downloaded file into the temporary folder
 2. Patch the vanilla jar using "java -Dpaperclip.patchonly=true -jar paper.jar" and inform the user that it is doing so using the progress properties.
 3. Copy the result back into the "software" folder.
 4. If one of these tasks fails, it will delete the temporary files (You can also set this to false to better debug errors)
+5. This way of doing this is not very clean since paper will download the newest mojang minecraft server every time a update happened and it patches itself.
