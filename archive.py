@@ -32,6 +32,7 @@ def main(silent: bool):
     cli.info(f"Preparing to archive {len(errors_file.json)} errors & {len(events_file.json)} events.")
     if cli.ask("Is this okay? (yes/y) ").lower() in ["y", "yes"]:
         archive(last, int(datetime.datetime.now().timestamp()), silent)
+        cli.success("Archive complete!")
     else:
         cli.fail("Aborting!")
         exit()

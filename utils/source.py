@@ -243,7 +243,7 @@ class Source:
         try:
             response = get(
                 ((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build))).replace(
-                    "%artifact%", artifact),
+                    "%artifact%", str(artifact)),
                 stream=True, allow_redirects=True, headers={"User-Agent": "Dependency downloader"})
         except Exception as e:
             cli.fail("Could not start download of " + self.source + " - aborting")
