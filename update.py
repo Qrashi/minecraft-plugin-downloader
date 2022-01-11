@@ -56,7 +56,7 @@ def main(check_all: bool, redownload: str):
                                "Shell process returned non zero error code",
                                exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
                     else:
-                        cli.success("Updated to - " + code.stdout.decode('utf-8'))
+                        cli.success("Updated to commit " + code.stdout.decode('utf-8'))
                         report_event("git", "Updated all files to commit " + code.stdout.decode('utf-8'))
 
     software_objects = {}
