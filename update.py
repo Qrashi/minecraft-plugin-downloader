@@ -69,7 +69,7 @@ def main(check_all: bool, redownload: str):
         obj = Software(software)  # Initialize every software
         was_updated, new_hash = obj.retrieve_newest(
             check_all, (check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
-        updated = updated + 1 if was_updated else 0
+        updated = updated + 1 if was_updated else updated
         obj.hash = new_hash
         software_objects[software] = obj
 
@@ -152,7 +152,7 @@ def main(check_all: bool, redownload: str):
                         changed = True
                         dependencies_updated = dependencies_updated + 1
 
-        updated_servers = updated_servers + 1 if changed else 0
+        updated_servers = updated_servers + 1 if changed else updated_servers
 
     cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
     cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
