@@ -89,47 +89,48 @@ def main(check_all: bool, redownload: str):
         if "auto_update" in server_info:
             # Check if server dependencies are ready
             # If an auto update is even required
-            if not server_version.matches(current_game_version):
-                if server_info["auto_update"]["enabled"]:
-                    cli.info("Checking " + server_name + " version compatibility", vanish=True)
-                    ready = True  # ready = ready for version increment
-                    server_info["auto_update"]["blocking"] = []
-                    for dependency in server_info["software"]:
-                        if dependency not in all_software:
-                            # >> Typo in config
-                            cli.fail(
-                                "Error while updating " + server_name + " server: required software " + dependency + " not found in software register")
-                            report(2, "updater - " + server_name,
-                                   "Server has unknown dependency, server dependency file might have a typo!")
-                            continue
-                        software = software_objects[dependency]
-                        if not current_game_version.fulfills(
-                                software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
-                            ready = False  # Plugin incompatibility found, abort
-                            if dependency in server_info["auto_update"]["blocking"]:
-                                diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][dependency]["since"]
-                                if diff >= 3:
-                                    report(int(min(max(2, 2 + (diff * 0.2)), 5)), "updater - " + server_name,
-                                           "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment since " + str(
-                                               diff) + " days",
-                                           additional="Server version: " + server_version.string() + " " + dependency + " version requirement: " + software.requirements.string())
-                            else:
-                                server_info["auto_update"]["blocking"].append(
-                                    {"name": dependency, "since": DAYS_SINCE_EPOCH})
+            if server_info["auto_update"]["enabled"]:
+                if not server_version.matches(current_game_version) and server_version.matches(server_version.get_next_minor()):
+                    for version in [server_version.get_next_minor(), current_game_version]:
+                        server_info["auto_update"]["blocking"][version.string()] = []
+                        ready = True  # ready = ready for version increment
+                        cli.info("Checking " + server_name + " version compatibility for " + version.string(), vanish=True)
+                        for dependency in server_info["software"]:
+                            if dependency not in all_software:
+                                # >> Typo in config
+                                cli.fail(
+                                    "Error while updating " + server_name + " server: required software " + dependency + " not found in software register")
+                                report(2, "updater - " + server_name,
+                                       "Server has unknown dependency, server dependency file might have a typo!")
+                                continue
+                            software = software_objects[dependency]
+                            if not version.fulfills(
+                                    software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
+                                ready = False  # Plugin incompatibility found, abort
+                                if dependency in server_info["auto_update"]["blocking"]:
+                                    diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
+                                    if diff >= 3:
+                                        report(int(min(max(2, 2 + (diff * 0.2)), 5)), "updater - " + server_name,
+                                               "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment since " + str(
+                                                   diff) + " days",
+                                               additional="Server version: " + server_version.string() + " " + dependency + " version requirement: " + software.requirements.string())
+                                else:
+                                    server_info["auto_update"]["blocking"][version.string()].append(
+                                        {"name": dependency, "since": DAYS_SINCE_EPOCH})
 
-                    if ready:  # Ready to version increment!
-                        changed = True
-                        if server_info["version"]["type"] == "version":  # Save version as string
-                            servers.json[server_name]["version"]["value"] = current_game_version.string()
-                        else:
-                            version_access = FileAccessField(server_info["version"])
-                            version_access.update(pool.open(version_access.filepath).json,
-                                                  current_game_version.string())
-                        server_info["auto_update"]["blocking"] = []
-                        cli.success(
-                            "Server " + server_name + " updated from " + server_version.string() + " to " + current_game_version.string())
-                        report_event("updater - " + server_name,
-                                     "Server version incremented to " + current_game_version.string())
+                        if ready:  # Ready to version increment!
+                            changed = True
+                            if server_info["version"]["type"] == "version":  # Save version as string
+                                servers.json[server_name]["version"]["value"] = version.string()
+                            else:
+                                version_access = FileAccessField(server_info["version"])
+                                version_access.update(pool.open(version_access.filepath).json,
+                                                      version.string())
+                            server_info["auto_update"]["blocking"][version.string] = []
+                            cli.success(
+                                "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
+                            report_event("updater - " + server_name,
+                                         "Server version incremented to " + version.string())
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = []
 
