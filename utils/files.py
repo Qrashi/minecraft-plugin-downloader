@@ -20,7 +20,7 @@ class FilePool:
         return self.__pool[filepath]
 
     def sync(self):
-        cli.simple_wait_fixed_time("Saving files, CRTL + C to abort [3s]", "Saved!", 3, green=True)
+        cli.simple_wait_fixed_time("Saving files, CRTL + C to abort [3s]", "Saved!", 3, green=True, vanish=True)
         for file in self.__pool.values():
             file.save()
 

@@ -1,7 +1,8 @@
-import traceback, argparse
+import traceback
 from subprocess import run, PIPE
-from utils.argparser import args
+
 from utils.FileAccessField import FileAccessField
+from utils.argparser import args
 from utils.cli_provider import cli
 from utils.errors import report
 from utils.events import report as report_event
@@ -20,7 +21,7 @@ def main(check_all: bool, redownload: str):
     servers = pool.open("data/servers.json")
     all_software = software_file.json
     config = pool.open("data/config.json").json
-    cli.success("Loaded configurations...")
+    cli.success("Loaded configurations...", vanish=True)
 
     if "git_auto_update" not in config:
         config["git_auto_update"] = True
@@ -155,8 +156,11 @@ def main(check_all: bool, redownload: str):
 
         updated_servers = updated_servers + 1 if changed else updated_servers
 
-    cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
-    cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
+    if updated != 0:
+        cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
+        cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
+    else:
+        cli.success("Found no updates!")
 
     pool.sync()
     cli.success("Update sequence complete")
