@@ -70,7 +70,7 @@ def main(check_all: bool, redownload: str):
         was_updated = obj.retrieve_newest(
             check_all, (check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else updated
-        all_software[software] = obj.hash
+        all_software[software]["hash"] = obj.hash
         software_objects[software] = obj
 
     cli.success("Retrieved newest versions!", vanish=True)
