@@ -47,24 +47,27 @@ class Software:
         """
         return self.hash != get_hash(other)
 
-    def retrieve_newest(self, check: bool, force_retrieve: bool) -> tuple[bool, str]:
+    def retrieve_newest(self, check: bool, force_retrieve: bool) -> bool:
         """
         Retrieves newest version from the internet if possible
         :param force_retrieve: bool; Always download newest build
         :param check: bool; Always fetch compatibility
         :return bool: Dependency was updated in some way
-        :return str: The new hash
         """
         cli.info("Retrieving newest version for " + self.software, vanish=True)
         if self.has_source():
-            return self.source.update(check, force_retrieve), self.get_hash()
+            updated = self.source.update(check, force_retrieve)
+            self.hash = self.get_hash()
+            return updated
         else:
             new_hash = self.get_hash()
             if new_hash != self.hash:
                 cli.success("Detected update for " + self.software)
-                return True, new_hash
+                self.hash = new_hash
+                return True
             else:
-                return False, new_hash
+                self.hash = new_hash
+                return False
 
     def copy(self, server: str) -> bool:
         """
