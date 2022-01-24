@@ -402,7 +402,7 @@ class Source:
         progress.complete("Updated " + self.source)
         return True
 
-    def update(self, check: bool, force_retrieve: bool):
+    def update(self, check: bool, force_retrieve: bool) -> bool:
         checked = False
         if check:
             self.check_compatibility()
@@ -419,3 +419,5 @@ class Source:
             if self.download_build(newest_build):
                 pool.open("data/sources.json").json[self.source]["build"]["local"] = newest_build
                 cli.success("Downloaded build " + str(newest_build) + " for " + self.source + "!")
+                return True
+        return False

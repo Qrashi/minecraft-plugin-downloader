@@ -57,12 +57,14 @@ class Software:
         """
         cli.info("Retrieving newest version for " + self.software, vanish=True)
         if self.has_source():
-            self.source.update(check, force_retrieve)
-        old_hash = self.hash
-        new_hash = self.get_hash()
-        if old_hash != new_hash and not self.has_source():
-            cli.success("Detected update for " + self.software)
-        return old_hash == new_hash, new_hash
+            return self.source.update(check, force_retrieve), self.get_hash()
+        else:
+            new_hash = self.get_hash()
+            if new_hash != self.hash:
+                cli.success("Detected update for " + self.software)
+                return True, new_hash
+            else:
+                return False, new_hash
 
     def copy(self, server: str) -> bool:
         """
