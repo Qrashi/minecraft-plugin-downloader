@@ -83,6 +83,7 @@ def main(check_all: bool, redownload: str):
     dependencies_updated = 0
     updated_servers = 0
     for server_name, server_info in servers.json.items():
+        cli.info("Updating " + server_name, vanish=True)
         changed = False
         # Get the server version
         if server_info["version"]["type"] == "version":
@@ -139,6 +140,7 @@ def main(check_all: bool, redownload: str):
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = []
 
+        cli.info("Updating plugins for " + server_name, vanish=True)
         for dependency, info in server_info["software"].items():
             if dependency not in all_software:
                 # >> Typo in config
