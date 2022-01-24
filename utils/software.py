@@ -60,7 +60,7 @@ class Software:
             self.source.update(check, force_retrieve)
         old_hash = self.hash
         new_hash = self.get_hash()
-        if not self.has_source() and old_hash != new_hash:
+        if old_hash != new_hash and not self.has_source():
             cli.success("Detected update for " + self.software)
         return old_hash == new_hash, new_hash
 
