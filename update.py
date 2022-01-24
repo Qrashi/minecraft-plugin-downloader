@@ -1,3 +1,5 @@
+import os
+import sys
 import traceback
 from subprocess import run, PIPE
 
@@ -59,6 +61,8 @@ def main(check_all: bool, redownload: str):
                     else:
                         cli.success("Updated to commit " + code.stdout.decode('utf-8'))
                         report_event("git", "Updated all files to commit " + code.stdout.decode('utf-8'))
+                    cli.warn("Restarting update script...")
+                    os.execl(sys.executable, sys.executable, *sys.argv)
 
     software_objects = {}
 
@@ -160,7 +164,7 @@ def main(check_all: bool, redownload: str):
         cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
         cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
     else:
-        cli.success("Found no updates!")
+        cli.success("Everything up to date!")
 
     pool.sync()
     cli.success("Update sequence complete")
