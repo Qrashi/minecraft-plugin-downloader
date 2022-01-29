@@ -31,7 +31,7 @@ class Source:
         if "headers" in source_info:
             self.headers = source_info["headers"]
         else:
-            self.headers = pool.open("data/config.json")["default_header"]
+            self.headers = pool.open("data/config.json").json["default_header"]
         self.server = source_info["server"]
         self.last_check = source_info["last_checked"]
         self.config: dict = source_info
