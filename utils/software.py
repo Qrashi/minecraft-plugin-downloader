@@ -103,7 +103,7 @@ class Software:
                     copied += len(piece)
                     destination.write(piece)
                     progress.update((copied / total * 100))
-                progress.complete("Updated " + self.software + "!")
+                progress.complete("Updated " + self.software + " in " + server + "!")
         except Exception as e:
             report(self.severity, "copy - " + self.software + " > " + server, "Copy process did not finish: ",
                    exception=e)
