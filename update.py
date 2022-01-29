@@ -30,6 +30,11 @@ def main(check_all: bool, redownload: str):
         report_event("git", "Automatic updates have been enabled!")
         cli.success("Activated automatic updates")
 
+    if "default_header" not in config:
+        config["default_header"] = {'User-Agent': 'Automated update script (github/Qrashi/minecraft-plugin-downloader)'}
+        report_event("config", "Default header has been set.")
+        cli.success("Set default header.")
+
     if config["git_auto_update"]:
         cli.info("Checking for git updates...", vanish=True)
 

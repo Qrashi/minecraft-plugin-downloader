@@ -161,6 +161,7 @@ sources.json: {name: source, name: source, name: source, ...}
 
 source: {
     server: The name of the API / server to download from in text (e.g: "paper API")
+N   headers: The headers to use. Useful for authentification
 N   compatibility:
         remote: URLAccess field to an array of (compatible) versions
         behaviour: How to handle this array / string
@@ -253,6 +254,7 @@ config.json: {
     newest_game_version: URLAccessField to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
     git_auto_update: boolean; Try to automatically download newest version from git
+    default_header: The default header to use (dict)
 }
 ```
 

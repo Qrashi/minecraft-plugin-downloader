@@ -28,6 +28,10 @@ class Source:
 
         source_info = sources[source]
         self.source = source
+        if "headers" in source_info:
+            self.headers = source_info["headers"]
+        else:
+            self.headers = pool.open("data/config.json")["default_header"]
         self.server = source_info["server"]
         self.last_check = source_info["last_checked"]
         self.config: dict = source_info
@@ -52,7 +56,7 @@ class Source:
             if enabled(self.config["compatibility"]):
                 access = URLAccessField(self.config["compatibility"]["remote"])
                 try:
-                    response = get(access.url)  # Replace all placeholders in the string and then
+                    response = get(access.url, headers=self.headers)  # Replace all placeholders in the string and then
                 except Exception as e:  # Error while fetching
                     report(self.severity, "version check -" + self.source,
                            "Could not fetch latest version information!",
@@ -146,7 +150,7 @@ class Source:
     def get_newest_build(self) -> Union[int, str]:
         url_field = URLAccessField(self.config["build"]["remote"])
         try:
-            response = get(self.newest_replacer(url_field.url))  # Replace all placeholders in the string and then
+            response = get(self.newest_replacer(url_field.url), headers=self.headers)  # Replace all placeholders in the string and then
         except Exception as e:  # Error while fetching
             report(self.severity, f"fetching build information - {self.source}",
                    "Could not fetch latest build information!", additional=f"Last update: {self.last_check}",
@@ -216,7 +220,7 @@ class Source:
             # Fetch of name required before build download
             access = URLAccessField(self.config["build"]["name"])
             try:
-                response = get((self.newest_replacer(access.url)).replace("%build%", str(build)))
+                response = get((self.newest_replacer(access.url)).replace("%build%", str(build)), headers=self.headers)
             except Exception as e:
                 cli.fail("Could not fetch artifact name for build " + str(
                     build) + " of " + self.source + " error while initiating connection")
@@ -244,7 +248,7 @@ class Source:
             response = get(
                 ((self.newest_replacer(self.config["build"]["download"])).replace("%build%", str(build))).replace(
                     "%artifact%", str(artifact)),
-                stream=True, allow_redirects=True, headers={"User-Agent": "Dependency downloader"})
+                stream=True, allow_redirects=True, headers=self.headers)
         except Exception as e:
             cli.fail("Could not start download of " + self.source + " - aborting")
             report(self.severity, "download - " + self.source, "Exception while downloading!",
