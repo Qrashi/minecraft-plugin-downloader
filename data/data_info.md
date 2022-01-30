@@ -160,6 +160,7 @@ This files stores data on how to download new software versions
 sources.json: {name: source, name: source, name: source, ...}
 
 source: {
+N   cache_results: Enable / disable usage of request result cache; boolean
     server: The name of the API / server to download from in text (e.g: "paper API")
 N   headers: The headers to use. Useful for authentification
 N   compatibility:

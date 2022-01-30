@@ -9,6 +9,7 @@ from .URLAccessField import URLAccessField
 from .cli_provider import cli
 from .dict_utils import enabled
 from .errors import report
+from .web_cache import get_cached
 from .events import report as report_event
 from .files import pool
 from .io import abs_filename
@@ -32,6 +33,10 @@ class Source:
             self.headers = source_info["headers"]
         else:
             self.headers = pool.open("data/config.json").json["default_header"]
+        if "cache_results" in source_info:
+            self.caching = source_info["cache_results"]
+        else:
+            self.caching = True
         self.server = source_info["server"]
         self.last_check = source_info["last_checked"]
         self.config: dict = source_info
@@ -56,7 +61,7 @@ class Source:
             if enabled(self.config["compatibility"]):
                 access = URLAccessField(self.config["compatibility"]["remote"])
                 try:
-                    response = get(access.url, headers=self.headers)  # Replace all placeholders in the string and then
+                    response = get_cached(access.url, self.headers, self.caching)  # Replace all placeholders in the string and then
                 except Exception as e:  # Error while fetching
                     report(self.severity, "version check -" + self.source,
                            "Could not fetch latest version information!",
@@ -150,7 +155,7 @@ class Source:
     def get_newest_build(self) -> Union[int, str]:
         url_field = URLAccessField(self.config["build"]["remote"])
         try:
-            response = get(self.newest_replacer(url_field.url), headers=self.headers)  # Replace all placeholders in the string and then
+            response = get_cached(self.newest_replacer(url_field.url), self.headers, self.caching)  # Replace all placeholders in the string and then
         except Exception as e:  # Error while fetching
             report(self.severity, f"fetching build information - {self.source}",
                    "Could not fetch latest build information!", additional=f"Last update: {self.last_check}",
@@ -220,7 +225,7 @@ class Source:
             # Fetch of name required before build download
             access = URLAccessField(self.config["build"]["name"])
             try:
-                response = get((self.newest_replacer(access.url)).replace("%build%", str(build)), headers=self.headers)
+                response = get_cached((self.newest_replacer(access.url)).replace("%build%", str(build)), self.headers, self.caching)
             except Exception as e:
                 cli.fail("Could not fetch artifact name for build " + str(
                     build) + " of " + self.source + " error while initiating connection")
