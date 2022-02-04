@@ -1,4 +1,5 @@
 from typing import Union, Dict
+
 from .errors import report
 
 
@@ -33,7 +34,8 @@ class URLAccessField:
                 report(10, "JsonField accessing function",
                        "Could not access json, some error occurred. URL: " + self.url,
                        additional="dictionary: " + str(json) + " ; accessing " + str(
-                           dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + str(access),
+                           dict_str(self.access_field)) + " ; trying to access " + str(to_access) + " in " + str(
+                           access),
                        exception=e)
                 return None
         return access

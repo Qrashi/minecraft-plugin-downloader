@@ -1,13 +1,13 @@
 from os import stat
 
 from .cli_provider import cli
+from .dict_utils import enabled
 from .errors import report
 from .files import pool
 from .io import generate
 from .sha244 import get_hash
 from .source import Source
 from .versions import VersionRangeRequirement
-from .dict_utils import enabled
 
 
 class Software:

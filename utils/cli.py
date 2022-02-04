@@ -1,6 +1,7 @@
+from math import floor
 from time import sleep
 from typing import Callable
-from math import floor
+
 from .json import JsonFile
 
 try:
@@ -12,15 +13,19 @@ except Exception as e_first:
     print(e_first)
     print("Attempting to install colorama")
     import os
+
     os.system("pip install -r requirements.txt")
     try:
         from colorama import Fore, Style, init
+
         init()
         print("Successfully installed dependencies, resuming...")
     except Exception as e_second:
         print("Could not auto-install dependencies. Please follow the instructions in README.md")
         from .errors import report
-        report(10, "CLI", "Could not start CLI output provider, dependencies missing!", exception=str(e_first) + "\nAfter attempting to auto-install: " + str(e_second))
+
+        report(10, "CLI", "Could not start CLI output provider, dependencies missing!",
+               exception=str(e_first) + "\nAfter attempting to auto-install: " + str(e_second))
         exit(1)
 
 try:
@@ -132,7 +137,8 @@ class CLIApp:
     def load(self, message: str, vanish: bool = False):
         self.print(Fore.BLUE, ">", message, vanish)
 
-    def simple_wait_fixed_time(self, message: str, end_message: str, time: int, vanish: bool = False, green: bool = False):
+    def simple_wait_fixed_time(self, message: str, end_message: str, time: int, vanish: bool = False,
+                               green: bool = False):
         self.print(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
         pos_small = 1
         pos_big = 1
@@ -159,7 +165,8 @@ class CLIApp:
                 if space_left >= 100:  # Maximum sized bar
                     self.__multiplier = 1
                     return
-                self.__multiplier = round(floor(space_left * 0.1) * 0.1, 1)  # Round to lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
+                self.__multiplier = round(floor(space_left * 0.1) * 0.1,
+                                          1)  # Round to lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
 
             def __init__(self, print_function):
                 self.__print_function = print_function
@@ -186,7 +193,8 @@ class CLIApp:
             def update(self, done):
                 done_modified = int(done * self.__multiplier)
                 self.__print_function(Fore.CYAN, "⤓", "[" + (
-                        '=' * done_modified) + (' ' * int(100 * self.__multiplier - done_modified)) + '] ' + self.__message, True, enable_len_check=False)
+                        '=' * done_modified) + (' ' * int(
+                    100 * self.__multiplier - done_modified)) + '] ' + self.__message, True, enable_len_check=False)
 
         return ProgressBar(self.print)
 

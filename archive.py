@@ -14,7 +14,8 @@ def main(silent: bool):
     cli.load("Accessing archive database & current errors", vanish=True)
     errors_file, events_file = JsonFile("data/errors.json"), JsonFile("data/events.json")
     archive_info = JsonFile("data/archive/archive.json",
-                            default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'", "\""))
+                            default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
+                                                                                                                  "\""))
     last = archive_info.json["last"]
     if datetime.datetime.now().timestamp() - last < 70:
         cli.fail("You may only create an archive every 70 seconds in order to")
@@ -72,7 +73,8 @@ def archive(start: int, end: int, silent: bool):
     archives_info.json["total"]["events"] = archives_info.json["total"]["events"] + nr_events
     archives_info.json["archives"].append(dir_name)
     if not silent:
-        cli.simple_wait_fixed_time("Clearing old events and errors", "Errors and events cleared", 3, vanish=True, green=True)
+        cli.simple_wait_fixed_time("Clearing old events and errors", "Errors and events cleared", 3, vanish=True,
+                                   green=True)
     events.save()
     errors.save()
     archives_info.save()
@@ -80,7 +82,8 @@ def archive(start: int, end: int, silent: bool):
 
 def recount():
     archive_info = JsonFile("data/archive/archive.json",
-                            default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'", "\""))
+                            default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
+                                                                                                                  "\""))
     if len(archive_info.json["archives"]) == 0:
         cli.success("No archives registered, done!")
         exit()

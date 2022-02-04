@@ -19,9 +19,11 @@ This set of small python scripts is aimed to help you manage your server plugins
 1. Clone the repository. (```git clone https://github.com/Qrashi/minecraft-plugin-downloader.git```)
 2. Execute ```pip install -r requirements.txt``` to install all dependencies
 4. Execute ```update.py```. This will
-   1. Generate configuration files
-   2. Download minecraft version information (by default) from the paper API
+    1. Generate configuration files
+    2. Download minecraft version information (by default) from the paper API
+
 ### Important
+
 The first time setup **REQUIRES** an internet connection in order to fetch basic minecraft information!
 
 ## Adding the first dependency
@@ -32,4 +34,5 @@ The first time setup **REQUIRES** an internet connection in order to fetch basic
 4. Execute ```manage_software.py``` and follow the instructions
 
 #### Example configurations can be found in the examples.md file
+
 For a more detailed overview of the different json files, please view the "data_info.md" file in "data/"

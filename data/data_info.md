@@ -10,49 +10,49 @@ This is a little documentation for the data structures used in these scripts:
 #### General data types:
 
 * URLAccessField:
-  * Advantages:
-    * Specifies which part of a response the programm should use
-    * e.g a URL returns a dict and we only want to use a specific field
-    * Or even if the field is buried inside of multiple other fields
-    * Easy to use, even just a URL is enough
-  * Syntax
-    * No need to access a specific field:
-    ```
-    field: URL
-    ```
-    * Need to access a specific field
-    ```
-    field: {
-      URL: URL to retrieve
-      access: [
-        field (string),
-        field (string),
-        ...  
-      ]
-    }
-    ```
-    Imagine this is the response to a version query:
-     ```json
-    {
-    "info": {
-      "versions:": [111,123,231]
-    },
-    "status":  "OK"
-    }    
-    ```
-    To access the "versions" field, you would use the following URLAccessField:
-    ```json
-    {
-      "URL": "https://blah.blah.blah",
-      "access":  [
-        "info",
-        "versions"  
-      ]
-    }    
-    ```
-    You can use a URLAccessField in every URL field. If you can't use one, it will be marked with a ```A``` letter at
-    the start of the line.
-  * A fine example of this type in use can be seen in the config.json file.
+    * Advantages:
+        * Specifies which part of a response the programm should use
+        * e.g a URL returns a dict and we only want to use a specific field
+        * Or even if the field is buried inside of multiple other fields
+        * Easy to use, even just a URL is enough
+    * Syntax
+        * No need to access a specific field:
+      ```
+      field: URL
+      ```
+        * Need to access a specific field
+      ```
+      field: {
+        URL: URL to retrieve
+        access: [
+          field (string),
+          field (string),
+          ...  
+        ]
+      }
+      ```
+      Imagine this is the response to a version query:
+       ```json
+      {
+      "info": {
+        "versions:": [111,123,231]
+      },
+      "status":  "OK"
+      }    
+      ```
+      To access the "versions" field, you would use the following URLAccessField:
+      ```json
+      {
+        "URL": "https://blah.blah.blah",
+        "access":  [
+          "info",
+          "versions"  
+        ]
+      }    
+      ```
+      You can use a URLAccessField in every URL field. If you can't use one, it will be marked with a ```A``` letter at
+      the start of the line.
+    * A fine example of this type in use can be seen in the config.json file.
 
 ### errors.json
 

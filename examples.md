@@ -2,16 +2,19 @@
 
 ## The perfect auto update lifecycle
 
-###Example: Any spigot plugin (Vault)
+### Example: Any spigot plugin (Vault)
+
 1. The compatible versions (set by the developer) get fetched from the spiget API
-   1. The behaviour is set to "max|max" so ALL received versions ("1.14 - 1.17") INCLUDING all higher versions of 1.17 (1.17.1, 1.17.2) are **COMPATIBLE** 
-   2. If the compatibility is different from the last check, an event gets reported
+    1. The behaviour is set to "max|max" so ALL received versions ("1.14 - 1.17") INCLUDING all higher versions of
+       1.17 (1.17.1, 1.17.2) are **COMPATIBLE**
+    2. If the compatibility is different from the last check, an event gets reported
 2. The versionID of the latest version is fetched and compared against the local version
 3. The newest build gets downloaded
 4. The newest build gets put into all the servers.
 
 Configurations for the Vault example
 <br>``software.json``
+
 ```json
 {
    "vault": {
@@ -26,7 +29,9 @@ Configurations for the Vault example
     }
 }
 ```
+
 ``sources.json``
+
 ```json
 {
    "vault": {
@@ -54,15 +59,18 @@ Configurations for the Vault example
     }
 }
 ```
-###Example: paper
+
+### Example: paper
+
 1. The versions paper was built against are fetched
-   1. The behaviour is set to "max|precise" so ONLY the highest received version is compatible
+    1. The behaviour is set to "max|precise" so ONLY the highest received version is compatible
 2. All builds for the newest detected fetched version get fetched
 3. The newest build gets downloaded
 4. The newest build gets put into all the servers.
 
 Configuration for this "perfect example":
 <br>``software.json``
+
 ```json
  {
    "paper": {
@@ -77,7 +85,9 @@ Configuration for this "perfect example":
    }
 }
 ```
+
 ``sources.json``
+
 ```json
 {
   "paper": {
@@ -108,18 +118,21 @@ Configuration for this "perfect example":
 ```
 
 ## Almost perfect examples
-###Example: LuckPerms
+
+### Example: LuckPerms
 
 1. The latestSuccessful build ID for LuckPerms get fetched and if different to the local ID,
 2. The newest build gets downloaded
 3. The newest build gets put into all the servers.
 
 This configuration WON'T update the versions that the dependency is compatible with.
-<br> I have set the minumum required version to 1.0 and the maximum to 1.99 because LuckPerms works with almost every mineceraft version.
+<br> I have set the minumum required version to 1.0 and the maximum to 1.99 because LuckPerms works with almost every
+mineceraft version.
 
 But an anticheat plugin for example that REQUIRES specific versions, requires you to manually maintain its requirements.
 
 Configuration for LuckPerms:
+
 ```json
 {
    "LuckPermsBukkit": {
@@ -134,7 +147,9 @@ Configuration for LuckPerms:
     }
 }
 ```
+
 ``sources.json``
+
 ```json
 {
    "LuckPermsBukkit": {
@@ -164,18 +179,22 @@ Configuration for LuckPerms:
 ```
 
 # No config at all
-Having no auto-update config at all is also fine! The script automatically checks the checksums of the dependencies.
-<br> You can just drop the newest versions of dependency x into the software folder and the script will distribute the file to all servers
 
+Having no auto-update config at all is also fine! The script automatically checks the checksums of the dependencies.
+<br> You can just drop the newest versions of dependency x into the software folder and the script will distribute the
+file to all servers
 
 # Static links
-Later on, I will add support for static links (e.g dropbox links). You can then set a "interval" and the script will just download the file every xy Months / days.
 
+Later on, I will add support for static links (e.g dropbox links). You can then set a "interval" and the script will
+just download the file every xy Months / days.
 
 # Tasks
-Software like paper needs a small bit of processing before using (applying patches).
-This can be done using tasks. The example below shows such a source.
+
+Software like paper needs a small bit of processing before using (applying patches). This can be done using tasks. The
+example below shows such a source.
 ``sources.json``
+
 ```json
 {
    "paper": {
@@ -239,13 +258,18 @@ This can be done using tasks. The example below shows such a source.
 
 Please note:
 Since the release of 1.18, mojang and paper have decided not to build fatjars (jars with all libraries).
-<br> Therefore the example above will just build a paper.jar with no libaries in it.
-I have started to use a central "libraries" directory where every paper instance "loads its libaries from" (using ``-DbundlerRepoDir=/path/to/your/cache``). <br>
+<br> Therefore the example above will just build a paper.jar with no libaries in it. I have started to use a central "
+libraries" directory where every paper instance "loads its libaries from" (
+using ``-DbundlerRepoDir=/path/to/your/cache``). <br>
 I don't know if I am using this the intented way so no guarantee!
 
 As you can see, the script will
+
 1. Copy the downloaded file into the temporary folder
-2. Patch the vanilla jar using "java -Dpaperclip.patchonly=true -jar paper.jar" and inform the user that it is doing so using the progress properties.
+2. Patch the vanilla jar using "java -Dpaperclip.patchonly=true -jar paper.jar" and inform the user that it is doing so
+   using the progress properties.
 3. Copy the result back into the "software" folder.
-4. If one of these tasks fails, it will delete the temporary files (You can also set this to false to better debug errors)
-5. This way of doing this is not very clean since paper will download the newest mojang minecraft server every time a update happened and it patches itself.
+4. If one of these tasks fails, it will delete the temporary files (You can also set this to false to better debug
+   errors)
+5. This way of doing this is not very clean since paper will download the newest mojang minecraft server every time a
+   update happened and it patches itself.

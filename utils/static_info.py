@@ -1,15 +1,15 @@
 import datetime
+from os import makedirs, path
 
 from requests import get
 
 from utils.URLAccessField import URLAccessField
 from .cli_provider import cli
+from .dict_utils import enabled
 from .errors import report
 from .events import report as report_event
 from .files import pool
 from .versions import Version
-from os import makedirs, path
-from .dict_utils import enabled
 
 if __name__ == "__main__":
     print("This file is meant to be imported!")
@@ -22,10 +22,11 @@ if pool.open("data/versions.json").json["last_check"] == 0:
     # Create "software" folder
     makedirs(path.abspath(pool.open("data/config.json").json["sources_folder"]), exist_ok=True)
 
-if pool.open("data/versions.json").json["last_check"] == 0 or enabled(pool.open("data/config.json").json["newest_game_version"]):
+if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
+        pool.open("data/config.json").json["newest_game_version"]):
     # If there has not been a last check (initialisation) will always check versions.
-    if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > pool.open("data/config.json")\
-                                                                                .json["version_check_interval"]:
+    if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > pool.open("data/config.json") \
+            .json["version_check_interval"]:
         current_version = Version(pool.open("data/versions.json").json["current_version"])
         # The version might not exist in the versions database because the database is nonexistent!
 
@@ -52,7 +53,8 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(pool.open(
                    exception=e)
             if pool.open("data/versions.json").json["last_check"]:
                 cli.fail("Error while retrieving data for first time setup, cannot continue!")
-                cli.fail("This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
+                cli.fail(
+                    "This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
                 print(e)
                 exit()
             remote = current_version
@@ -62,7 +64,8 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(pool.open(
             pool.open("data/versions.json").json["current_version"] = remote.string()
             if pool.open("data/versions.json").json["last_check"] == 0:
                 pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
-                report_event("Initialisation", "Initialisation complete, the current minecraft version was set to " + remote.string())
+                report_event("Initialisation",
+                             "Initialisation complete, the current minecraft version was set to " + remote.string())
                 # On first initialisation. the version is 1.0 so rather give a "initialisation complete" event
                 cli.success("Initialisation complete!")
                 pool.sync()

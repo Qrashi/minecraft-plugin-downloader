@@ -2,6 +2,7 @@ import os
 
 from utils.cli import CLIApp
 from utils.files import pool
+from utils.sha244 import get_hash
 from utils.versions import is_valid, Version, VersionRangeRequirement
 
 
@@ -137,7 +138,8 @@ def add(file: str):
 
     name = ask()
 
-    identifier = cli.ask("Please enter a human understandable identifier for your software (e.g Proxy / Waterfall): ", vanish=True)
+    identifier = cli.ask("Please enter a human understandable identifier for your software (e.g Proxy / Waterfall): ",
+                         vanish=True)
 
     def ask():
         result = cli.ask("How severe would any error related to this software be? (0-10): ", vanish=True)
@@ -183,11 +185,9 @@ def add(file: str):
     cli.update_sender("MNG")
     cli.info("Saving to json...")
 
-    sources_file = pool.open("data/sources.json")
-
     all_software[name] = {
         "file": file,
-        "hash": "",
+        "hash": get_hash(file),
         "identifier": identifier,
         "requirements": range_requirement.dict(),
         "severity": severity,

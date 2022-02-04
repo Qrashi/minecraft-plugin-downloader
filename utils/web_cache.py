@@ -1,6 +1,7 @@
 from typing import Dict
-from requests import get
+
 from requests import Response
+from requests import get
 
 requests: Dict[str, Response] = {}
 

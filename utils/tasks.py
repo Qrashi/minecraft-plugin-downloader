@@ -1,13 +1,14 @@
-from subprocess import run, PIPE
-from shutil import copy
-from typing import Callable
 from distutils.dir_util import copy_tree
+from shutil import copy
+from subprocess import run, PIPE
+from typing import Callable
 
 from .cli_provider import cli
 from .errors import report
 
 
-def execute(task: dict, directory: str, replace: Callable[[str], str], final_file: str, source_name: str, last_check: str, severity: int) -> bool:
+def execute(task: dict, directory: str, replace: Callable[[str], str], final_file: str, source_name: str,
+            last_check: str, severity: int) -> bool:
     task_type = task["type"]
     if task_type == "run":
         code = run(replace(task["value"]), stdout=PIPE, stderr=PIPE, cwd=directory, shell=True)

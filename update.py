@@ -78,7 +78,8 @@ def main(check_all: bool, redownload: str):
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
-            check_all, (check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
+            check_all, (
+                        check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else updated
         all_software[software]["hash"] = obj.hash
         software_objects[software] = obj
@@ -101,11 +102,13 @@ def main(check_all: bool, redownload: str):
             # Check if server dependencies are ready
             # If an auto update is even required
             if server_info["auto_update"]["enabled"]:
-                if not server_version.matches(current_game_version) and server_version.matches(server_version.get_next_minor()):
+                if not server_version.matches(current_game_version) and server_version.matches(
+                        server_version.get_next_minor()):
                     for version in [server_version.get_next_minor(), current_game_version]:
                         server_info["auto_update"]["blocking"][version.string()] = []
                         ready = True  # ready = ready for version increment
-                        cli.info("Checking " + server_name + " version compatibility for " + version.string(), vanish=True)
+                        cli.info("Checking " + server_name + " version compatibility for " + version.string(),
+                                 vanish=True)
                         for dependency in server_info["software"]:
                             if dependency not in all_software:
                                 # >> Typo in config
@@ -119,7 +122,8 @@ def main(check_all: bool, redownload: str):
                                     software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
                                 ready = False  # Plugin incompatibility found, abort
                                 if dependency in server_info["auto_update"]["blocking"]:
-                                    diff = DAYS_SINCE_EPOCH - server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
+                                    diff = DAYS_SINCE_EPOCH - \
+                                           server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
                                     if diff >= 3:
                                         report(int(min(max(2, 2 + (diff * 0.2)), 5)), "updater - " + server_name,
                                                "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment since " + str(

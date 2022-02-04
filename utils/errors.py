@@ -5,7 +5,8 @@ from typing import Union
 from .json import JsonFile
 
 
-def report(severity: int, sender: str, reason: str, additional: str = "", exception: Union[Exception, str] = "No exception provided."):
+def report(severity: int, sender: str, reason: str, additional: str = "",
+           exception: Union[Exception, str] = "No exception provided."):
     errors = JsonFile("data/errors.json", default="[]")
 
     time = datetime.now().strftime("%d.%m %H:%M:%S")
