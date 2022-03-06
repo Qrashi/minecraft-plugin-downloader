@@ -7,7 +7,7 @@ class JsonFile:
     def __init__(self, filename: str, default: str = "{}"):
         self.__filename = abs_filename(filename)
         json_file = load(self.__filename, default=default)
-        self.json = json.load(json_file)
+        self.json: dict = json.load(json_file)
         json_file.close()
 
     def reload(self):
