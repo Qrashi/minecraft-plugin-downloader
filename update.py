@@ -25,6 +25,14 @@ def main(check_all: bool, redownload: str):
     config = pool.open("data/config.json").json
     cli.success("Loaded configurations...", vanish=True)
 
+    if "config_version" not in config:
+        config["config_version"] = 0
+        for server_config in servers.json.values():
+            if "auto_update" in server_config:
+                server_config["auto_update"]["blocking"] = {}
+        report_event("config", "Config version was increased to 0, blocking elements were RESET")
+        cli.success("Fixed blocking lists - BLOCKING software has been reset")
+
     if "git_auto_update" not in config:
         config["git_auto_update"] = True
         report_event("git", "Automatic updates have been enabled!")
@@ -105,7 +113,7 @@ def main(check_all: bool, redownload: str):
                 if not server_version.matches(current_game_version) and server_version.matches(
                         server_version.get_next_minor()):
                     for version in [server_version.get_next_minor(), current_game_version]:
-                        server_info["auto_update"]["blocking"][version.string()] = []
+                        server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
                         cli.info("Checking " + server_name + " version compatibility for " + version.string(),
                                  vanish=True)
@@ -130,8 +138,7 @@ def main(check_all: bool, redownload: str):
                                                    diff) + " days",
                                                additional="Server version: " + server_version.string() + " " + dependency + " version requirement: " + software.requirements.string())
                                 else:
-                                    server_info["auto_update"]["blocking"][version.string()].append(
-                                        {"name": dependency, "since": DAYS_SINCE_EPOCH})
+                                    server_info["auto_update"]["blocking"][version.string()][dependency] = DAYS_SINCE_EPOCH
 
                         if ready:  # Ready to version increment!
                             changed = True
@@ -141,13 +148,13 @@ def main(check_all: bool, redownload: str):
                                 version_access = FileAccessField(server_info["version"])
                                 version_access.update(pool.open(version_access.filepath).json,
                                                       version.string())
-                            server_info["auto_update"]["blocking"][version.string] = []
+                            server_info["auto_update"]["blocking"][version.string()] = {}
                             cli.success(
                                 "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
                             report_event("updater - " + server_name,
                                          "Server version incremented to " + version.string())
             else:  # Version up to date
-                server_info["auto_update"]["blocking"] = []
+                server_info["auto_update"]["blocking"] = {}
 
         cli.info("Updating plugins for " + server_name, vanish=True)
         for dependency, info in server_info["software"].items():
