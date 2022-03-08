@@ -3,10 +3,10 @@ from os import makedirs, path
 from subprocess import run, PIPE
 from requests import get
 
-VERSION = "a1.2-rc1"
+VERSION = "a1.2-rc2"
 COMMIT = "could not get commit. see errors.json"
 
-commit = run("git rev-parse HEAD", stdout=PIPE, stderr=PIPE)
+commit = run("git rev-parse HEAD", shell=True, stdout=PIPE, stderr=PIPE)
 if commit.returncode != 0:
     print("Could not find current commit")
 else:
