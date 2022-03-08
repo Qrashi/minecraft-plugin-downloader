@@ -159,6 +159,8 @@ This files stores data on how to download new software versions
 ```
 sources.json: {name: source, name: source, name: source, ...}
 
+A at the start of a line indicates support for replacing non-static information like new version buildID
+
 source: {
 N   cache_results: Enable / disable usage of request result cache; boolean
     server: The name of the API / server to download from in text (e.g: "paper API")
@@ -220,10 +222,10 @@ A                   keep: (optional) the path to copy the tmp directory to (for 
                     Please note that there is no way to "offically" keep the tmp directory in order to keep the software folder clean.
                 }
                 
-                (not implemented)* write: The file to write to; a list of things to change.
+                * write: The file to write to; a list of things to change.
                 {
 A                   file: filename (must be of json format)
-                    change: [
+                    changes: [
                         {
 A                           path: Path to field that requires a change e.g ["builds", "downloaded"] (can create values)
 A                           value: The new value

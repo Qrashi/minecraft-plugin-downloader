@@ -374,6 +374,8 @@ class Source:
                     return self.newest_replacer(string.replace("%build%", str(build)))
 
                 for task in self.config["tasks"]["tasks"]:
+                    if not enabled(task):
+                        continue
                     progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
                     if not execute(task, tmp_dir, replace, FOLDER + "/" + self.file + ".tmp", self.source,
                                    self.last_check, self.severity):

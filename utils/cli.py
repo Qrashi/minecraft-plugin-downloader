@@ -92,7 +92,7 @@ class CLIApp:
         if len(message) + 8 > terminal_size and enable_len_check:
             # WONT FIT IN ONE LINE
             message = cut_string(message, terminal_size - 8)
-        print('\r\x1b[2K\r' + color + symbol + self.__sender + color + message, end=end + Style.RESET_ALL)
+        print('\r\x1b[2K\r' + color + symbol + self.__sender + color + " " + message, end=end + Style.RESET_ALL)
 
     def update_sender(self, sender: str):
         if len(sender) > 3:
@@ -103,7 +103,7 @@ class CLIApp:
             insert = sender + " "
         else:
             insert = sender
-        self.__sender = Style.DIM + " " + insert + " " + Style.RESET_ALL + "| "
+        self.__sender = Style.DIM + " " + insert + " " + Style.RESET_ALL + "|"
 
     def get_sender(self):
         return self.__sender

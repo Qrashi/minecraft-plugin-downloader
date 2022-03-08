@@ -1,5 +1,6 @@
 import datetime
 from os import makedirs, path
+from subprocess import run, PIPE
 
 from requests import get
 
@@ -14,6 +15,15 @@ from .versions import Version
 if __name__ == "__main__":
     print("This file is meant to be imported!")
     exit()
+
+VERSION = "a1.2-rc1"
+COMMIT = "could not get commit. see errors.json"
+
+commit = run("git rev-parse HEAD", stdout=PIPE, stderr=PIPE)
+if commit.returncode != 0:
+    report(1, "git", "could not retrieve current git commit", additional="return code: " + str(commit.returncode) + "; stderr: " + str(commit.stderr) + "; stdout: " + str(commit.stdout))
+else:
+    COMMIT = commit.stdout
 
 DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
 STATIC_VERSIONS = [Version("1.0")]

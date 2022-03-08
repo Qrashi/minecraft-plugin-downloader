@@ -2,6 +2,7 @@ from datetime import datetime
 from json import dumps
 from typing import Union
 
+from .static_info import VERSION, COMMIT
 from .json import JsonFile
 
 
@@ -20,6 +21,6 @@ def report(severity: int, sender: str, reason: str, additional: str = "",
         exception = "Could not save exception - not serializable!"
 
     errors.json.append({"severity": severity, "reason": reason, "from": sender,
-                        "additional": additional, "time": time, "stamp": stamp, "exception": str(exception)})
+                        "additional": additional, "time": time, "stamp": stamp, "exception": str(exception), "version": VERSION, "commit": COMMIT})
 
     errors.save()

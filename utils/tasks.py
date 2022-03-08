@@ -5,6 +5,7 @@ from typing import Callable
 
 from .cli_provider import cli
 from .errors import report
+from .files import pool
 
 
 def execute(task: dict, directory: str, replace: Callable[[str], str], final_file: str, source_name: str,
@@ -50,8 +51,14 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
             report(0, "Task \"" + task_type + "\" did not specify any actions!",
                    "No fatal error, could be configuration issue", additional="Last update: " + last_check)
         return True
-
-    # TODO: Add "write" and "copy" task
+    elif task_type == "write":
+        # Write data to file
+        file = pool.open(task["value"])
+        for change in task["value"]["changes"]:
+                current = file.json
+                for access in change["path"]:
+                    current = current[access]
+                current = replace(change["value"])
 
     report(severity, "Task \"" + task_type + "\" not found", "Task not found", additional="Last update: " + last_check)
     return False
