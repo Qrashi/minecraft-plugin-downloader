@@ -10,7 +10,7 @@ commit = run("git rev-parse HEAD", shell=True, stdout=PIPE, stderr=PIPE)
 if commit.returncode != 0:
     print("Could not find current commit")
 else:
-    COMMIT = commit.stdout
+    COMMIT = commit.stdout.decode('utf-8')
 
 from utils.URLAccessField import URLAccessField
 from .cli_provider import cli
