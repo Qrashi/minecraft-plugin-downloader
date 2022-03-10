@@ -77,9 +77,9 @@ def _int(string: str):
 
 class Version:
     def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]]):
-        if type(version) == str:
+        if type(version) is str:
             self.major, self.minor = from_string(version)
-        elif type(version) == dict:
+        elif type(version) is dict:
             self.major = version["major"].replace("1.", "")
             self.minor = version["minor"].replace(".", "")
         else:
@@ -157,8 +157,8 @@ class Version:
 
 class VersionRangeRequirement:
     def __init__(self, requirement: Union[Tuple[Version, Version], Dict[str, str], Dict[str, Dict[str, int]]]):
-        if type(requirement) == tuple:
-            if type(requirement[0]) == str:
+        if type(requirement) is tuple:
+            if type(requirement[0]) is str:
                 # two string versions
                 self.minimum = Version(requirement[0])
                 self.maximum = Version(requirement[1])

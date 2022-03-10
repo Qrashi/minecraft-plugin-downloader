@@ -83,7 +83,7 @@ class Source:
                 previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
 
                 field = access.access(response.json())
-                if type(field) == str:
+                if type(field) is str:
                     newest = Version(field)
                     lower_newest = Version(field)
                     if self.config["compatibility"]["behaviour"].endswith("|major"):
@@ -93,7 +93,7 @@ class Source:
                         compatibility = VersionRangeRequirement((previous_compatibility.minimum, newest))
                     else:  # precise mode
                         compatibility = VersionRangeRequirement((lower_newest, newest))
-                elif type(field) == list:
+                elif type(field) is list:
                     if len(field) == 0:
                         report(self.severity, "Compatibility checker",
                                self.source + " has NO compatibilities (list is empty) (" + str(field) + ")",
@@ -178,7 +178,7 @@ class Source:
         field = url_field.access(response.json())
 
         def _int(string_to_int, throw_error=False) -> int:
-            if type(string_to_int) == int:
+            if type(string_to_int) is int:
                 return int(string_to_int)
             if string_to_int.isdigit():
                 return int(string_to_int)
@@ -192,12 +192,12 @@ class Source:
                 return self.config["build"]["local"]
                 # Wont download newer version if the max build is the local build
 
-        if type(field) == str or type(field) == int:
+        if type(field) is str or type(field) is int:
             pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
             # Single newest build
             return field
-        elif type(field) == list:
+        elif type(field) is list:
             # List of builds MUST be ints to compare
             if len(field) == 0:
                 # No builds!
