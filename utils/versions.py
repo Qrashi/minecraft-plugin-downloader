@@ -175,7 +175,7 @@ class VersionRangeRequirement:
             if "max" in requirement:
                 self.maximum = Version(requirement["max"])
                 unset.pop("max")
-            for unset_field in unset.keys():
+            for unset_field in unset:
                 if unset_field == "max":
                     self.maximum = Version("1.99.9")  # Maximum version => Supports every version
                 else:
