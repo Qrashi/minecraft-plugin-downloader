@@ -81,7 +81,7 @@ def main(check_all: bool, redownload: str):
 
     cli.info("Retrieving newest versions...", vanish=True)
     updated = 0
-    check_redownload = False if redownload == "none" else True
+    check_redownload = not redownload == "none"
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
