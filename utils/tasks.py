@@ -22,7 +22,7 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
                    exception="Log: stdout:\n" + str(code.stdout) + "\nstderr:\n" + str(code.stderr))
             return False
         return True
-    elif task_type == "end":
+    if task_type == "end":
         if "file" in task["value"]:
             # Copy the specified file to the tmp file
             try:
@@ -51,7 +51,7 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
             report(0, "Task \"" + task_type + "\" did not specify any actions!",
                    "No fatal error, could be configuration issue", additional="Last update: " + last_check)
         return True
-    elif task_type == "write":
+    if task_type == "write":
         # Write data to file
         file = pool.open(task["value"])
         for change in task["value"]["changes"]:

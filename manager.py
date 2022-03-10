@@ -50,9 +50,8 @@ def main():
             result = cli.ask("Software to manage: ", vanish=True)
             if result in detected_files:
                 return result
-            else:
-                cli.fail("This item is not on the list! Try again.", vanish=True)
-                return ask()
+            cli.fail("This item is not on the list! Try again.", vanish=True)
+            return ask()
 
         file = ask()
         operation = detected_files[file]

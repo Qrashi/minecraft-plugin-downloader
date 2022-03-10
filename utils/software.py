@@ -60,15 +60,13 @@ class Software:
             updated = self.source.update(check, force_retrieve)
             self.hash = self.get_hash()
             return updated
-        else:
-            new_hash = self.get_hash()
-            if new_hash != self.hash:
-                cli.success("Detected update for " + self.software)
-                self.hash = new_hash
-                return True
-            else:
-                self.hash = new_hash
-                return False
+        new_hash = self.get_hash()
+        if new_hash != self.hash:
+            cli.success("Detected update for " + self.software)
+            self.hash = new_hash
+            return True
+        self.hash = new_hash
+        return False
 
     def copy(self, server: str) -> bool:
         """
