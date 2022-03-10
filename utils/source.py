@@ -1,6 +1,7 @@
 import datetime
 from os import remove, makedirs
 from shutil import copy, rmtree
+import sys
 from typing import Union
 
 from requests import get
@@ -25,7 +26,7 @@ class Source:
         if source not in sources:
             report(9, "source class", "Typo in config: Could not find specified source, terminating!",
                    additional="Provided source: " + source)
-            exit()
+            sys.exit()
 
         source_info = sources[source]
         self.source = source

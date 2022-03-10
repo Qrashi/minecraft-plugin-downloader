@@ -2,6 +2,7 @@ import datetime
 from os import makedirs, path
 from subprocess import run, PIPE
 from requests import get
+import sys
 
 VERSION = "a1.2-rc2"
 COMMIT = "could not get commit. see errors.json"
@@ -22,7 +23,7 @@ from .versions import Version
 
 if __name__ == "__main__":
     print("This file is meant to be imported!")
-    exit()
+    sys.exit()
 
 DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
 STATIC_VERSIONS = [Version("1.0")]
@@ -65,7 +66,7 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
                 cli.fail(
                     "This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
                 print(e)
-                exit()
+                sys.exit()
             remote = current_version
         if current_version.matches(remote):
             pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
@@ -78,7 +79,7 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
                 # On first initialisation. the version is 1.0 so rather give a "initialisation complete" event
                 cli.success("Initialisation complete!")
                 pool.sync()
-                exit()
+                sys.exit()
             else:
                 pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
                 report_event("Game version checker", "The game version was updated to " + remote.string())

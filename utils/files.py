@@ -1,3 +1,4 @@
+import sys
 from typing import Dict
 
 from .cli_provider import cli
@@ -6,7 +7,7 @@ from .json import JsonFile
 
 if __name__ == "__main__":
     print("The file pool is only meant to be imported!")
-    exit()
+    sys.exit()
 
 
 class FilePool:

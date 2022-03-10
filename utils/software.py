@@ -7,6 +7,7 @@ from .files import pool
 from .io import generate
 from .sha244 import get_hash
 from .source import Source
+import sys
 from .versions import VersionRangeRequirement
 
 
@@ -22,7 +23,7 @@ class Software:
         if software not in software_json:
             report(9, "software class", "Typo in config: Could not find specified software, exiting!",
                    additional="Provided software: " + software)
-            exit()
+            sys.exit()
         self.software = software
         if self.has_source():
             self.source = Source(software)
