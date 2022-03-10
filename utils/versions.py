@@ -52,12 +52,11 @@ def from_string(version: str, report_errors=False, terminate=False) -> tuple[str
             else:
                 minor = ""  # No minor version
             return major, minor
-        else:  # Version above 1.10
-            major = version[2:4]  # We only take the 11 from 1.11
-            if len(version) > 4:  # Has minor version because major is at least 4 characters long
-                minor = version[5:]
-            else:
-                minor = ""  # No minor version
+        major = version[2:4]  # We only take the 11 from 1.11
+        if len(version) > 4:  # Has minor version because major is at least 4 characters long
+            minor = version[5:]
+        else:
+            minor = ""  # No minor version
         return major, minor
     if terminate:
         sys.exit()
@@ -131,10 +130,9 @@ class Version:
         """
         if int(version.major) > int(self.major):
             return False  # Other major version is higher.
-        elif int(version.major) < int(self.major):
+        if int(version.major) < int(self.major):
             return True  # Other major version is lower - no need to check for minor version
-        else:  # Major versions are equal
-            return _int(version.minor) < _int(self.minor)  # Minor version is bigger
+        return _int(version.minor) < _int(self.minor)  # Minor version is bigger
 
     def is_lower(self, version) -> bool:
         """
@@ -144,10 +142,9 @@ class Version:
         """
         if int(version.major) < int(self.major):
             return False  # Other major version is lower.
-        elif int(version.major) > int(self.major):
+        if int(version.major) > int(self.major):
             return True  # Other major version is higher - no need to check for minor version
-        else:  # Major versions are equal
-            return _int(version.minor) > _int(self.minor)  # Minor version is smaller
+        return _int(version.minor) > _int(self.minor)  # Minor version is smaller
 
     def fulfills(self, requirement: VersionRangeRequirement) -> bool:
         if self.matches(requirement.minimum) or self.matches(requirement.maximum):

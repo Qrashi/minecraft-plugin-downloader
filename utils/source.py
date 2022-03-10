@@ -150,9 +150,8 @@ class Source:
 
                 self.newest_replacer = replace
                 return True
-            else:
-                # Use previous compatiblility
-                return True
+            # Use previous compatiblility
+            return True
 
     def get_newest_build(self) -> Union[int, str]:
         url_field = URLAccessField(self.config["build"]["remote"])
@@ -183,22 +182,20 @@ class Source:
                 return int(string_to_int)
             if string_to_int.isdigit():
                 return int(string_to_int)
-            elif throw_error:
+            if throw_error:
                 report(self.severity, "fetching builds - " + self.source,
                        "Expected field of type str, got " + str(string_to_int), additional=self.last_check)
                 cli.fail("Could not fetch latest build information, expected string, got " + str(string_to_int))
                 return self.config["build"]["local"]
                 # Wont download newer version if the newer build is the local build
-            else:
-                return self.config["build"]["local"]
-                # Wont download newer version if the max build is the local build
+            return self.config["build"]["local"]
 
         if type(field) is str or type(field) is int:
             pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
             # Single newest build
             return field
-        elif type(field) is list:
+        if type(field) is list:
             # List of builds MUST be ints to compare
             if len(field) == 0:
                 # No builds!
