@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import sys
 
 from utils.cli_provider import cli
 from utils.json import JsonFile
@@ -21,22 +22,22 @@ def main(silent: bool):
         cli.fail("You may only create an archive every 70 seconds in order to")
         cli.fail("prevent directories with the same name from being generated.")
         cli.info(f"Please wait {70 - int(datetime.datetime.now().timestamp()) - last} seconds and retry.")
-        exit()
+        sys.exit()
     if len(events_file.json) == 0 and len(errors_file.json) == 0:
         cli.fail("Nothing to archive!")
-        exit()
+        sys.exit()
 
     if silent:
         archive(last, int(datetime.datetime.now().timestamp()), silent)
         cli.success("Archive complete!")
-        exit()
+        sys.exit()
     cli.info(f"Preparing to archive {len(errors_file.json)} errors & {len(events_file.json)} events.")
     if cli.ask("Is this okay? (yes/y) ").lower() in ["y", "yes"]:
         archive(last, int(datetime.datetime.now().timestamp()), silent)
         cli.success("Archive complete!")
     else:
         cli.fail("Aborting!")
-        exit()
+        sys.exit()
 
 
 def archive(start: int, end: int, silent: bool):
@@ -86,7 +87,7 @@ def recount():
                                                                                                                   "\""))
     if len(archive_info.json["archives"]) == 0:
         cli.success("No archives registered, done!")
-        exit()
+        sys.exit()
     total = {"events": 0, "errors": 0}
     progress = cli.progress_bar("Counting errors", vanish=True)
     archives = len(archive_info.json["archives"])
@@ -125,7 +126,7 @@ if __name__ == "__main__":
             main(args.silent)
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
-        exit()
+        sys.exit()
 else:
     print("ERROR: File was imported!")
-    exit()
+    sys.exit()

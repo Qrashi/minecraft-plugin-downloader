@@ -193,7 +193,7 @@ if __name__ == "__main__":
         main(args.check_all_compatibility, args.redownload)
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
-        exit()
+        sys.exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
             report(10, "updater - main", "Updater quit unexpectedly! Uncaught exception: ",

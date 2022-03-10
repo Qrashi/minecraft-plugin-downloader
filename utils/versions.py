@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 
 from typing import Union, Dict, Tuple
 
@@ -17,7 +18,7 @@ def is_valid(version: str, report_errors=False, terminate=False) -> bool:
                 report(9, "Version integrity checker", reason, additional="Program terminated.")
                 if terminate:
                     print("Error: Version \"" + version + "\" NOT valid! Program stopped, files NOT saved.")
-                    exit()
+                    sys.exit()
 
     version = str(version)
     if len(version) > 7:  # Longer than 1.17.77 (6)
@@ -59,7 +60,7 @@ def from_string(version: str, report_errors=False, terminate=False) -> tuple[str
                 minor = ""  # No minor version
         return major, minor
     if terminate:
-        exit()
+        sys.exit()
     else:
         return "", ""
 
