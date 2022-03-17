@@ -8,7 +8,6 @@ import sys
 from utils.URLAccessField import URLAccessField
 from .cli_provider import cli
 from .dict_utils import enabled
-from .errors import report
 from .events import report as report_event
 from .files import pool
 from .versions import Version
@@ -20,9 +19,9 @@ if __name__ == "__main__":
 VERSION = "a1.2-rc2"
 COMMIT = "could not get commit. see errors.json"
 
-commit = run("git rev-parse HEAD", shell=True, stdout=PIPE, stderr=PIPE)
+commit = run("git log -n 1 --pretty=format:\"%H\"", stdout=PIPE, stderr=PIPE, shell=True)
 if commit.returncode != 0:
-    print("Could not find current commit")
+    print("Could not find current commit.")
 else:
     COMMIT = commit.stdout.decode('utf-8')
 
@@ -60,6 +59,7 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
             for static_version in STATIC_VERSIONS:
                 versions_json.json["versions"].append(static_version.string())
         except Exception as e:
+            from .errors import report
             report(3, "Could not fetch newest game version:", "Error while executing get request and decoding data.",
                    exception=e)
             if pool.open("data/versions.json").json["last_check"]:
