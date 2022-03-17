@@ -15,6 +15,8 @@ from utils.versions import Version
 
 
 def main(check_all: bool, redownload: str):
+    if check_all:
+        cli.info("Checking compatibility for every software")
     cli.load(f"Starting update, loading software data...", vanish=True)
 
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
