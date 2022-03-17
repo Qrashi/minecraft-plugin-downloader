@@ -4,6 +4,8 @@ from subprocess import run, PIPE
 from requests import get
 import sys
 
+VERSION = "a1.2-rc2"
+COMMIT = "could not get commit. see errors.json"
 
 from utils.URLAccessField import URLAccessField
 from .cli_provider import cli
@@ -15,9 +17,6 @@ from .versions import Version
 if __name__ == "__main__":
     print("This file is meant to be imported!")
     sys.exit()
-
-VERSION = "a1.2-rc2"
-COMMIT = "could not get commit. see errors.json"
 
 commit = run("git log -n 1 --pretty=format:\"%H\"", stdout=PIPE, stderr=PIPE, shell=True)
 if commit.returncode != 0:
