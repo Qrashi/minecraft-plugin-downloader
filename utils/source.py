@@ -1,6 +1,7 @@
 import datetime
 from os import remove, makedirs
 from shutil import copy, rmtree
+import sys
 from typing import Union
 
 from requests import get
@@ -25,7 +26,7 @@ class Source:
         if source not in sources:
             report(9, "source class", "Typo in config: Could not find specified source, terminating!",
                    additional="Provided source: " + source)
-            exit()
+            sys.exit()
 
         source_info = sources[source]
         self.source = source
@@ -83,7 +84,7 @@ class Source:
                 previous_compatibility = VersionRangeRequirement(all_software[self.source]["requirements"])
 
                 field = access.access(response.json())
-                if type(field) == str:
+                if type(field) is str:
                     newest = Version(field)
                     lower_newest = Version(field)
                     if self.config["compatibility"]["behaviour"].endswith("|major"):
@@ -93,7 +94,7 @@ class Source:
                         compatibility = VersionRangeRequirement((previous_compatibility.minimum, newest))
                     else:  # precise mode
                         compatibility = VersionRangeRequirement((lower_newest, newest))
-                elif type(field) == list:
+                elif type(field) is list:
                     if len(field) == 0:
                         report(self.severity, "Compatibility checker",
                                self.source + " has NO compatibilities (list is empty) (" + str(field) + ")",
@@ -149,9 +150,8 @@ class Source:
 
                 self.newest_replacer = replace
                 return True
-            else:
-                # Use previous compatiblility
-                return True
+            # Use previous compatiblility
+            return True
 
     def get_newest_build(self) -> Union[int, str]:
         url_field = URLAccessField(self.config["build"]["remote"])
@@ -178,26 +178,24 @@ class Source:
         field = url_field.access(response.json())
 
         def _int(string_to_int, throw_error=False) -> int:
-            if type(string_to_int) == int:
+            if type(string_to_int) is int:
                 return int(string_to_int)
             if string_to_int.isdigit():
                 return int(string_to_int)
-            elif throw_error:
+            if throw_error:
                 report(self.severity, "fetching builds - " + self.source,
                        "Expected field of type str, got " + str(string_to_int), additional=self.last_check)
                 cli.fail("Could not fetch latest build information, expected string, got " + str(string_to_int))
                 return self.config["build"]["local"]
                 # Wont download newer version if the newer build is the local build
-            else:
-                return self.config["build"]["local"]
-                # Wont download newer version if the max build is the local build
+            return self.config["build"]["local"]
 
-        if type(field) == str or type(field) == int:
+        if type(field) is str or type(field) is int:
             pool.open("data/sources.json").json[self.source]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
             # Single newest build
             return field
-        elif type(field) == list:
+        if type(field) is list:
             # List of builds MUST be ints to compare
             if len(field) == 0:
                 # No builds!

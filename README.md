@@ -1,3 +1,4 @@
+[![DeepSource](https://deepsource.io/gh/Qrashi/minecraft-plugin-downloader.svg/?label=active+issues&show_trend=true&token=YZB2mvViWt3uIzoSt5pLF6Pe)](https://deepsource.io/gh/Qrashi/minecraft-plugin-downloader/?ref=repository-badge)
 # minecraft plugin downloader
 
 This set of small python scripts is aimed to help you manage your server plugins.

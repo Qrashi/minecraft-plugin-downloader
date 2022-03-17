@@ -81,7 +81,7 @@ def main(check_all: bool, redownload: str):
 
     cli.info("Retrieving newest versions...", vanish=True)
     updated = 0
-    check_redownload = False if redownload == "none" else True
+    check_redownload = not redownload == "none"
     for software in all_software:
         cli.load("Retrieving compatibility for " + software, vanish=True)
         obj = Software(software)  # Initialize every software
@@ -165,16 +165,15 @@ def main(check_all: bool, redownload: str):
                 report(2, "updater - " + server_name,
                        "Server has unknown dependency, server dependency file might have a typo!")
                 continue
-            else:
-                software = software_objects[dependency]
-                if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
-                    if not server_info["software"][dependency]["enabled"]:
-                        continue
-                    if server_version.fulfills(software.requirements):
-                        # Software IS compatible, copy is allowed > copy
-                        software.copy(server_name)
-                        changed = True
-                        dependencies_updated = dependencies_updated + 1
+            software = software_objects[dependency]
+            if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
+                if not server_info["software"][dependency]["enabled"]:
+                    continue
+                if server_version.fulfills(software.requirements):
+                    # Software IS compatible, copy is allowed > copy
+                    software.copy(server_name)
+                    changed = True
+                    dependencies_updated = dependencies_updated + 1
 
         updated_servers = updated_servers + 1 if changed else updated_servers
 
@@ -193,7 +192,7 @@ if __name__ == "__main__":
         main(args.check_all_compatibility, args.redownload)
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
-        exit()
+        sys.exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
             report(10, "updater - main", "Updater quit unexpectedly! Uncaught exception: ",

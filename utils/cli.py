@@ -1,4 +1,5 @@
 from math import floor
+import sys
 from time import sleep
 from typing import Callable
 
@@ -26,7 +27,7 @@ except Exception as e_first:
 
         report(10, "CLI", "Could not start CLI output provider, dependencies missing!",
                exception=str(e_first) + "\nAfter attempting to auto-install: " + str(e_second))
-        exit(1)
+        sys.exit(1)
 
 try:
     from os import get_terminal_size
@@ -49,7 +50,7 @@ except Exception as e:
         print("\nExample:\n\"terminal_fallback_size\": 30 (minimum is 21)")
         print("\nAfter saving the file, please execute this file again!")
         terminal_size = 0
-        exit()
+        sys.exit()
 
 if terminal_size < 20:
     print(Fore.RED + Style.BRIGHT + "Error: Unsupported terminal size, output might look ugly!" + Style.RESET_ALL)

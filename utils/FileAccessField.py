@@ -4,14 +4,14 @@ from .errors import report
 
 
 def dict_str(field: Union[list, str]) -> list:
-    if type(field) == str:
+    if type(field) is str:
         return [field]
     return field
 
 
 class FileAccessField:
     def __init__(self, field: Union[Dict[str, str], str]):
-        if type(field) == str:
+        if type(field) is str:
             self.filepath = field
             self.access_field = None
         else:

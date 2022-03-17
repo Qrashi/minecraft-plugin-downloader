@@ -7,6 +7,7 @@ from .files import pool
 from .io import generate
 from .sha244 import get_hash
 from .source import Source
+import sys
 from .versions import VersionRangeRequirement
 
 
@@ -22,7 +23,7 @@ class Software:
         if software not in software_json:
             report(9, "software class", "Typo in config: Could not find specified software, exiting!",
                    additional="Provided software: " + software)
-            exit()
+            sys.exit()
         self.software = software
         if self.has_source():
             self.source = Source(software)
@@ -59,15 +60,13 @@ class Software:
             updated = self.source.update(check, force_retrieve)
             self.hash = self.get_hash()
             return updated
-        else:
-            new_hash = self.get_hash()
-            if new_hash != self.hash:
-                cli.success("Detected update for " + self.software)
-                self.hash = new_hash
-                return True
-            else:
-                self.hash = new_hash
-                return False
+        new_hash = self.get_hash()
+        if new_hash != self.hash:
+            cli.success("Detected update for " + self.software)
+            self.hash = new_hash
+            return True
+        self.hash = new_hash
+        return False
 
     def copy(self, server: str) -> bool:
         """

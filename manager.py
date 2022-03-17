@@ -1,4 +1,5 @@
 import os
+import sys
 
 from utils.cli import CLIApp
 from utils.files import pool
@@ -33,7 +34,7 @@ def main():
     if len(detected_files) == 0:
         cli.fail("Scan complete, could not find any new / deleted files!")
         cli.say("Please put / remove the new software into the software folder!")
-        exit()
+        sys.exit()
 
     cli.success("Found " + str(len(detected_files)) + " changed files.")
     if len(detected_files) == 1:
@@ -47,11 +48,10 @@ def main():
 
         def ask():
             result = cli.ask("Software to manage: ", vanish=True)
-            if result in detected_files.keys():
+            if result in detected_files:
                 return result
-            else:
-                cli.fail("This item is not on the list! Try again.", vanish=True)
-                return ask()
+            cli.fail("This item is not on the list! Try again.", vanish=True)
+            return ask()
 
         file = ask()
         operation = detected_files[file]
@@ -95,7 +95,7 @@ def remove(file: str):
 
     if cli.ask("Please confirm operation: (yes / no) ").lower() not in ["y", "yes"]:
         cli.fail("Aborting")
-        exit()
+        sys.exit()
 
     servers_file = pool.open("data/servers.json")
 
@@ -180,7 +180,7 @@ def add(file: str):
         if cli.ask("Are you sure you would like to cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no",
                                                                                                           ""]:
             cli.fail("Aborting")
-            exit()
+            sys.exit()
 
     cli.update_sender("MNG")
     cli.info("Saving to json...")
@@ -200,11 +200,11 @@ def add(file: str):
 
 if __name__ != "__main__":
     print("This file is only meant to be executed from the console")
-    exit()
+    sys.exit()
 else:
     cli = CLIApp("INI")
     try:
         main()
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
-        exit()
+        sys.exit()

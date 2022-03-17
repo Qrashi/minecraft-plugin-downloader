@@ -1,4 +1,5 @@
 from __future__ import annotations
+import sys
 
 from typing import Union, Dict, Tuple
 
@@ -17,7 +18,7 @@ def is_valid(version: str, report_errors=False, terminate=False) -> bool:
                 report(9, "Version integrity checker", reason, additional="Program terminated.")
                 if terminate:
                     print("Error: Version \"" + version + "\" NOT valid! Program stopped, files NOT saved.")
-                    exit()
+                    sys.exit()
 
     version = str(version)
     if len(version) > 7:  # Longer than 1.17.77 (6)
@@ -51,15 +52,14 @@ def from_string(version: str, report_errors=False, terminate=False) -> tuple[str
             else:
                 minor = ""  # No minor version
             return major, minor
-        else:  # Version above 1.10
-            major = version[2:4]  # We only take the 11 from 1.11
-            if len(version) > 4:  # Has minor version because major is at least 4 characters long
-                minor = version[5:]
-            else:
-                minor = ""  # No minor version
+        major = version[2:4]  # We only take the 11 from 1.11
+        if len(version) > 4:  # Has minor version because major is at least 4 characters long
+            minor = version[5:]
+        else:
+            minor = ""  # No minor version
         return major, minor
     if terminate:
-        exit()
+        sys.exit()
     else:
         return "", ""
 
@@ -77,9 +77,9 @@ def _int(string: str):
 
 class Version:
     def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]]):
-        if type(version) == str:
+        if type(version) is str:
             self.major, self.minor = from_string(version)
-        elif type(version) == dict:
+        elif type(version) is dict:
             self.major = version["major"].replace("1.", "")
             self.minor = version["minor"].replace(".", "")
         else:
@@ -130,10 +130,9 @@ class Version:
         """
         if int(version.major) > int(self.major):
             return False  # Other major version is higher.
-        elif int(version.major) < int(self.major):
+        if int(version.major) < int(self.major):
             return True  # Other major version is lower - no need to check for minor version
-        else:  # Major versions are equal
-            return _int(version.minor) < _int(self.minor)  # Minor version is bigger
+        return _int(version.minor) < _int(self.minor)  # Minor version is bigger
 
     def is_lower(self, version) -> bool:
         """
@@ -143,10 +142,9 @@ class Version:
         """
         if int(version.major) < int(self.major):
             return False  # Other major version is lower.
-        elif int(version.major) > int(self.major):
+        if int(version.major) > int(self.major):
             return True  # Other major version is higher - no need to check for minor version
-        else:  # Major versions are equal
-            return _int(version.minor) > _int(self.minor)  # Minor version is smaller
+        return _int(version.minor) > _int(self.minor)  # Minor version is smaller
 
     def fulfills(self, requirement: VersionRangeRequirement) -> bool:
         if self.matches(requirement.minimum) or self.matches(requirement.maximum):
@@ -157,8 +155,8 @@ class Version:
 
 class VersionRangeRequirement:
     def __init__(self, requirement: Union[Tuple[Version, Version], Dict[str, str], Dict[str, Dict[str, int]]]):
-        if type(requirement) == tuple:
-            if type(requirement[0]) == str:
+        if type(requirement) is tuple:
+            if type(requirement[0]) is str:
                 # two string versions
                 self.minimum = Version(requirement[0])
                 self.maximum = Version(requirement[1])
@@ -175,7 +173,7 @@ class VersionRangeRequirement:
             if "max" in requirement:
                 self.maximum = Version(requirement["max"])
                 unset.pop("max")
-            for unset_field in unset.keys():
+            for unset_field in unset:
                 if unset_field == "max":
                     self.maximum = Version("1.99.9")  # Maximum version => Supports every version
                 else:
