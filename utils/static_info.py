@@ -3,14 +3,6 @@ from os import makedirs, path
 from subprocess import run, PIPE
 from requests import get
 
-VERSION = "a1.2-rc2"
-COMMIT = "could not get commit. see errors.json"
-
-commit = run("git rev-parse HEAD", shell=True, stdout=PIPE, stderr=PIPE)
-if commit.returncode != 0:
-    print("Could not find current commit")
-else:
-    COMMIT = commit.stdout.decode('utf-8')
 
 from utils.URLAccessField import URLAccessField
 from .cli_provider import cli
@@ -23,6 +15,15 @@ from .versions import Version
 if __name__ == "__main__":
     print("This file is meant to be imported!")
     exit()
+
+VERSION = "a1.2-rc2"
+COMMIT = "could not get commit. see errors.json"
+
+commit = run("git rev-parse HEAD", shell=True, stdout=PIPE, stderr=PIPE)
+if commit.returncode != 0:
+    print("Could not find current commit")
+else:
+    COMMIT = commit.stdout.decode('utf-8')
 
 DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
 STATIC_VERSIONS = [Version("1.0")]

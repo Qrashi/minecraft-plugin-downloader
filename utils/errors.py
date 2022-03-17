@@ -20,6 +20,8 @@ def report(severity: int, sender: str, reason: str, additional: str = "",
     except Exception:
         exception = "Could not save exception - not serializable!"
 
+    #print("severity: ", severity, ";reason: ", reason, ";from: ", sender, ";additional: ", additional, ";time: ", time, ";exception: ", str(exception), ";version: ", VERSION, ";commit: ", COMMIT)
+
     errors.json.append({"severity": severity, "reason": reason, "from": sender,
                         "additional": additional, "time": time, "stamp": stamp, "exception": str(exception), "version": VERSION, "commit": COMMIT})
 
