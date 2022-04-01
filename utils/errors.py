@@ -3,7 +3,7 @@ from json import dumps
 from typing import Union
 
 from .static_info import VERSION, COMMIT
-from .json import JsonFile
+from .json_file import JsonFile
 
 
 def report(severity: int, sender: str, reason: str, additional: str = "",

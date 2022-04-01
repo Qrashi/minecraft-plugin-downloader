@@ -3,7 +3,7 @@ import sys
 from time import sleep
 from typing import Callable
 
-from .json import JsonFile
+from .json_file import JsonFile
 
 try:
     from colorama import Fore, Style, init

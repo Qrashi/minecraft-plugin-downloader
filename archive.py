@@ -3,7 +3,7 @@ import datetime
 import sys
 
 from utils.cli_provider import cli
-from utils.json import JsonFile
+from utils.json_file import JsonFile
 
 
 def get_time(timestamp: int) -> str:

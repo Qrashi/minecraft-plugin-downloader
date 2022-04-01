@@ -3,7 +3,7 @@ from typing import Dict
 
 from .cli_provider import cli
 from .io import abs_filename
-from .json import JsonFile
+from .json_file import JsonFile
 
 if __name__ == "__main__":
     print("The file pool is only meant to be imported!")

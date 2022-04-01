@@ -1,4 +1,4 @@
-from .json import JsonFile
+from .json_file import JsonFile
 
 
 def report(sender: str, event: str, additional: str = ""):
