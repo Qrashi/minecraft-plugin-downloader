@@ -76,7 +76,7 @@ def _int(string: str):
 
 
 class Version:
-    def __init__(self, version: Union[str, Tuple[int, Union[int, str]], Dict[str, int]]):
+    def __init__(self, version: Union[str, Tuple[Union[int, str], Union[int, str]], Dict[str, int]]):
         if type(version) is str:
             self.major, self.minor = from_string(version)
         elif type(version) is dict:
@@ -103,7 +103,10 @@ class Version:
         If there is no higher main version, return current version
         :return Version: Version
         """
-        attempt = Version((self.major, str(int(self.minor) + 1)))
+        if self.minor == '':
+            attempt = Version((self.major, "1"))
+        else:
+            attempt = Version((self.major, str(int(self.minor) + 1)))
         if attempt.string() in versions:
             return attempt
         # There is no next major version
