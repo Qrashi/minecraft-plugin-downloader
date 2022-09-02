@@ -112,10 +112,16 @@ def main(check_all: bool, redownload: str):
             # Check if server dependencies are ready
             # If an auto update is even required
             if server_info["auto_update"]["enabled"]:
-                if not server_version.matches(current_game_version) and server_version.matches(
-                        server_version.get_next_minor()):
-                    for version in [server_version.get_next_minor(), current_game_version]:
-                        server_info["auto_update"]["blocking"][version.string()] = {}
+                if not server_version.matches(current_game_version):
+                    # Possibly out of date
+                    version_iter = server_version
+                    higher_versions = [current_game_version]
+                    while not version_iter.matches(current_game_version):
+                        version_iter = version_iter.get_next_minor()
+                        higher_versions.append(version_iter)
+                    for version in higher_versions:
+                        if not version.string() in server_info["auto_update"]["blocking"]:
+                            server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
                         cli.info("Checking " + server_name + " version compatibility for " + version.string(),
                                  vanish=True)
@@ -143,6 +149,9 @@ def main(check_all: bool, redownload: str):
                                     server_info["auto_update"]["blocking"][version.string()][dependency] = DAYS_SINCE_EPOCH
 
                         if ready:  # Ready to version increment!
+                            if server_version.is_higher(version):
+                                # Don't "downgrade"
+                                continue
                             changed = True
                             if server_info["version"]["type"] == "version":  # Save version as string
                                 servers.json[server_name]["version"]["value"] = version.string()
@@ -150,7 +159,8 @@ def main(check_all: bool, redownload: str):
                                 version_access = FileAccessField(server_info["version"])
                                 version_access.update(pool.open(version_access.filepath).json,
                                                       version.string())
-                            server_info["auto_update"]["blocking"][version.string()] = {}
+                            server_version = version.string()
+                            server_info["auto_update"]["blocking"].pop(version.string())
                             cli.success(
                                 "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
                             report_event("updater - " + server_name,
