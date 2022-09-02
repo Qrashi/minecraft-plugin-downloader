@@ -115,7 +115,7 @@ def main(check_all: bool, redownload: str):
                 if not server_version.matches(current_game_version):
                     # Possibly out of date
                     version_iter = server_version
-                    higher_versions = [current_game_version]
+                    higher_versions = []
                     while not version_iter.matches(current_game_version):
                         version_iter = version_iter.get_next_minor()
                         higher_versions.append(version_iter)
@@ -142,7 +142,7 @@ def main(check_all: bool, redownload: str):
                                            server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
                                     if diff >= 3:
                                         report(int(min(max(2, 2 + (diff * 0.2)), 5)), "updater - " + server_name,
-                                               "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment since " + str(
+                                               "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment for " + str(
                                                    diff) + " days",
                                                additional="Server version: " + server_version.string() + " " + dependency + " version requirement: " + software.requirements.string())
                                 else:
@@ -150,7 +150,7 @@ def main(check_all: bool, redownload: str):
 
                         if ready:  # Ready to version increment!
                             if server_version.is_higher(version):
-                                # Don't "downgrade"
+                                # Don't "downgrade" or "upgrade" to the "same version" (current game version can be in the pool twice)
                                 continue
                             changed = True
                             if server_info["version"]["type"] == "version":  # Save version as string
@@ -164,7 +164,7 @@ def main(check_all: bool, redownload: str):
                                 "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
                             server_version = version
                             report_event("updater - " + server_name,
-                                         "Server version incremented to " + version.string())
+                                         "Server updated to " + version.string())
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = {}
 
