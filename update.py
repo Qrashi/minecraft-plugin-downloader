@@ -159,7 +159,7 @@ def main(check_all: bool, redownload: str):
                                 version_access = FileAccessField(server_info["version"])
                                 version_access.update(pool.open(version_access.filepath).json,
                                                       version.string())
-                            server_version = version.string()
+                            server_version = version
                             server_info["auto_update"]["blocking"].pop(version.string())
                             cli.success(
                                 "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
