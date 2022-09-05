@@ -127,8 +127,7 @@ def main(check_all: bool, redownload: str):
                         failing = 0
                         sleep(0.2)
                         progress = cli.progress_bar(
-                            "Checking " + server_name + " version compatibility for " + version.string(),
-                            vanish=True)
+                            "Checking " + server_name + " version compatibility for " + version.string())
                         dep_iter = 0
                         dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
