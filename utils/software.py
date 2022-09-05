@@ -55,7 +55,6 @@ class Software:
         :param check: bool; Always fetch compatibility
         :return bool: Dependency was updated in some way
         """
-        cli.info("Retrieving newest version for " + self.software, vanish=True)
         if self.has_source():
             updated = self.source.update(check, force_retrieve)
             self.hash = self.get_hash()
