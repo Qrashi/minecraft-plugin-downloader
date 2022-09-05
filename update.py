@@ -149,7 +149,7 @@ def main(check_all: bool, redownload: str):
                                 failing = failing + 1
                                 if dependency in server_info["auto_update"]["blocking"][version.string()]:
                                     diff = DAYS_SINCE_EPOCH - \
-                                           server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
+                                           server_info["auto_update"]["blocking"][version.string()][dependency]
                                     if diff >= 3:
                                         report(int(min(max(2, 2 + (diff * 0.2)), 5)), "updater - " + server_name,
                                                "Server " + server_name + " is set to auto update, yet the dependency \"" + dependency + "\" has been blocking the automatic increment for " + str(
