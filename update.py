@@ -134,6 +134,8 @@ def main(check_all: bool, redownload: str):
                         for dependency in server_info["software"]:
                             progress.update((dep_iter / dependencies_total) * 100)
                             if not server_info["software"][dependency]["enabled"]:
+                                if dependency in server_info["auto_update"]["blocking"][version.string()]:
+                                    server_info["auto_update"]["blocking"][version.string()].pop(dependency)
                                 continue
                             if dependency not in all_software:
                                 # >> Typo in config
