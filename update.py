@@ -13,7 +13,8 @@ from utils.events import report as report_event
 from utils.files import pool
 from utils.software import Software
 from utils.versions import Version
-
+from utils.dict_utils import enabled
+from utils.tasks import execute
 
 def main(check_all: bool, redownload: str):
     if check_all:
@@ -82,14 +83,14 @@ def main(check_all: bool, redownload: str):
 
     software_objects = {}
 
-    progress = cli.progress_bar("Retrieving newest versions...", vanish=True)
+    progress = cli.progress_bar("Checking for newest versions...", vanish=True)
     checked = 0
     total_software = len(all_software)
     updated = 0
     check_redownload = not redownload == "none"
     for software in all_software:
         checked = checked + 1
-        progress.update_message("Retrieving compatibility for " + software + "...", (checked / total_software) * 100)
+        progress.update_message("Checking " + software + "...", (checked / total_software) * 100)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
@@ -180,11 +181,28 @@ def main(check_all: bool, redownload: str):
                                 version_access.update(pool.open(version_access.filepath).json,
                                                       version.string())
                             server_info["auto_update"]["blocking"].pop(version.string())
-                            progress.complete(
-                                "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
-                            server_version = version
-                            report_event("updater - " + server_name,
-                                         "Server updated to " + version.string())
+                            progress.update_message(
+                                "Updating " + server_name + " from " + server_version.string() + " to " + version.string(), 0)
+                            update = True
+                            if "on_update" in server_info["auto_update"]:
+                                # Execute tasks
+                                def replace(inp: str) -> str:
+                                    replaced = inp.replace("%old_version%", server_version.string())
+                                    return replaced.replace("%new_version%", version.string())
+                                for task in server_info["auto_update"]["on_update"]:
+                                    if enabled(task):
+                                        progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
+                                        if not execute(task, server_info["path"], replace, None, server_name, DAYS_SINCE_EPOCH, 10):
+                                            # Error while executing task
+                                            update = False
+                                            progress.fail("Could not update " + server_name + " to " + version.string() + ". See errors.json")
+                                            report(10, "update of " + server_name, "could not execute all update tasks. some things may need to be cleaned up.", additional="script doesn't clean up automatically.")
+                                            break
+                            if update:
+                                server_version = version
+                                report_event("updater - " + server_name,
+                                             "Server updated to " + version.string())
+                                progress.complete("Updated " + server_name + " to " + version.string() + "!")
 
                         else:
                             progress.fail(server_name + " not compatible with " + version.string() + "(" + str(failing) + " non-compatible)")

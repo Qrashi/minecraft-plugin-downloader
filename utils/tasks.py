@@ -1,14 +1,14 @@
 from distutils.dir_util import copy_tree
 from shutil import copy
 from subprocess import run, PIPE
-from typing import Callable
+from typing import Callable, Union
 
 from .cli_provider import cli
 from .errors import report
 from .files import pool
 
 
-def execute(task: dict, directory: str, replace: Callable[[str], str], final_file: str, source_name: str,
+def execute(task: dict, directory: str, replace: Callable[[str], str], final_file: Union[str, None], source_name: str,
             last_check: str, severity: int) -> bool:
     task_type = task["type"]
     if task_type == "run":
@@ -23,6 +23,9 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
             return False
         return True
     if task_type == "end":
+        if final_file is None:
+            report(severity, "Task \"" + task_type + "\" not found while updating " + source_name, "Task not found",
+                   additional="Last update: " + last_check)
         if "file" in task["value"]:
             # Copy the specified file to the tmp file
             try:
@@ -48,7 +51,7 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
                        additional="Last update: " + last_check, exception=e)
                 return False
         if len(task["value"]) == 0:  # If there are no values, ERROR
-            report(0, "Task \"" + task_type + "\" did not specify any actions!",
+            report(0, "Task \"" + task_type + f"\" did not specify any actions! ({source_name})",
                    "No fatal error, could be configuration issue", additional="Last update: " + last_check)
         return True
     if task_type == "write":
@@ -61,5 +64,5 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
             current = replace(change["value"])
         return True
 
-    report(severity, "Task \"" + task_type + "\" not found", "Task not found", additional="Last update: " + last_check)
+    report(severity, "Task \"" + task_type + "\" not found while updating " + source_name, "Task not found", additional="Last update: " + last_check)
     return False

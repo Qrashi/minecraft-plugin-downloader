@@ -211,6 +211,7 @@ N       enabled: Enable tasks to execute after downloading the newest build
         cleanup: boolean; clean up the files after an error (good for investigating errors)
         tasks: [
             {
+N               enabled: wether task is enabled
                 type: Type of task; Types of tasks e.g "run"
                     * run: Run a console command in the tmp directory (os.system)
                     * end: Specify what to do at the end of all tasks (optional)

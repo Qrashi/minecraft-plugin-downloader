@@ -306,65 +306,64 @@ class Source:
 
                     return False
         if "tasks" in self.config and enabled(self.config["tasks"]):
-            if enabled(self.config["tasks"]):
-                # Generate temporary directory
-                progress.update_message("Initializing tasks")
-                tmp_dir = abs_filename(FOLDER + "/task-" + self.source.replace(" ", "_") + "-build" + str(build))
+            # Generate temporary directory
+            progress.update_message("Initializing tasks")
+            tmp_dir = abs_filename(FOLDER + "/task-" + self.source.replace(" ", "_") + "-build" + str(build))
 
-                def handle_error():
-                    """
-                    Try deleting all temporary things
-                    :return:
-                    """
-                    if self.config["tasks"]["cleanup"]:
-                        try:
-                            remove(FOLDER + "/" + self.file + ".tmp")
-                        except Exception as e:
-                            cli.fail("Error while removing temporary downloaded file: (NOT-FATAL)")
-                            print(e)
-                            report(int(self.severity / 2), f"download - clean up after task failure {self.source}",
-                                   "Could not delete temporary downloaded file!",
-                                   additional=f"Not deleted: {self.file}.tmp", exception=e)
-                        try:
-                            rmtree(tmp_dir)
-                        except Exception as e:
-                            cli.fail("Error while removing temporary task directory after failure: (NOT-FATAL)")
-                            print(e)
-                            report(int(self.severity / 2),
-                                   f"download - clean up temporary directory after task failure ({self.source})",
-                                   "Could not delete temporary directory!", additional=f"Not deleted: {tmp_dir}",
-                                   exception=e)
-
-                try:
-                    makedirs(tmp_dir, exist_ok=True)
-                except Exception as e:
-                    cli.fail("Could not initialize temporary task directory!")
-                    print(e)
-                    report(self.severity, "download - create temporary task directory " + self.source,
-                           "Could not create directory", additional="Last update: " + self.last_check, exception=e)
-                    if self.config["tasks"]["cleanup"]:
-                        try:
-                            remove(FOLDER + "/" + self.file + ".tmp")
-                        except Exception as e:
-                            cli.fail("Error while removing temporary downloaded file: (NOT-FATAL)")
-                            print(e)
-                            report(int(self.severity / 2), "download - clean up after task failure" + self.source,
-                                   "Could not delete temporary downloaded file!",
-                                   additional="Not deleted: " + self.file + ".tmp", exception=e)
-                    return False  # Not updated.
-
-                if self.config["tasks"]["copy_downloaded"]:
-                    progress.update_message("Initializing temporary directory, copying files")
+            def handle_error():
+                """
+                Try deleting all temporary things
+                :return:
+                """
+                if self.config["tasks"]["cleanup"]:
                     try:
-                        copy(FOLDER + "/" + self.file + ".tmp", tmp_dir + "/" + self.file)
+                        remove(FOLDER + "/" + self.file + ".tmp")
                     except Exception as e:
-                        progress.fail("Error while copying temporary file to temporary folder: ")
+                        cli.fail("Error while removing temporary downloaded file: (NOT-FATAL)")
                         print(e)
-                        report(self.severity, "copy - " + self.source,
-                               "Could not copy downloaded files into temporary task directory!",
-                               additional="Last update: " + self.last_check, exception=e)
-                        handle_error()
-                        return False  # Not updated.
+                        report(int(self.severity / 2), f"download - clean up after task failure {self.source}",
+                               "Could not delete temporary downloaded file!",
+                               additional=f"Not deleted: {self.file}.tmp", exception=e)
+                    try:
+                        rmtree(tmp_dir)
+                    except Exception as e:
+                        cli.fail("Error while removing temporary task directory after failure: (NOT-FATAL)")
+                        print(e)
+                        report(int(self.severity / 2),
+                               f"download - clean up temporary directory after task failure ({self.source})",
+                               "Could not delete temporary directory!", additional=f"Not deleted: {tmp_dir}",
+                               exception=e)
+
+            try:
+                makedirs(tmp_dir, exist_ok=True)
+            except Exception as e:
+                cli.fail("Could not initialize temporary task directory!")
+                print(e)
+                report(self.severity, "download - create temporary task directory " + self.source,
+                       "Could not create directory", additional="Last update: " + self.last_check, exception=e)
+                if self.config["tasks"]["cleanup"]:
+                    try:
+                        remove(FOLDER + "/" + self.file + ".tmp")
+                    except Exception as e:
+                        cli.fail("Error while removing temporary downloaded file: (NOT-FATAL)")
+                        print(e)
+                        report(int(self.severity / 2), "download - clean up after task failure" + self.source,
+                               "Could not delete temporary downloaded file!",
+                               additional="Not deleted: " + self.file + ".tmp", exception=e)
+                return False  # Not updated.
+
+            if self.config["tasks"]["copy_downloaded"]:
+                progress.update_message("Initializing temporary directory, copying files")
+                try:
+                    copy(FOLDER + "/" + self.file + ".tmp", tmp_dir + "/" + self.file)
+                except Exception as e:
+                    progress.fail("Error while copying temporary file to temporary folder: ")
+                    print(e)
+                    report(self.severity, "copy - " + self.source,
+                           "Could not copy downloaded files into temporary task directory!",
+                           additional="Last update: " + self.last_check, exception=e)
+                    handle_error()
+                    return False  # Not updated.
 
                 # Done with all temporary directory setup
 
@@ -372,13 +371,12 @@ class Source:
                     return self.newest_replacer(string.replace("%build%", str(build)))
 
                 for task in self.config["tasks"]["tasks"]:
-                    if not enabled(task):
-                        continue
-                    progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
-                    if not execute(task, tmp_dir, replace, FOLDER + "/" + self.file + ".tmp", self.source,
-                                   self.last_check, self.severity):
-                        handle_error()
-                        return False
+                    if enabled(task):
+                        progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
+                        if not execute(task, tmp_dir, replace, FOLDER + "/" + self.file + ".tmp", self.source,
+                                       self.last_check, self.severity):
+                            handle_error()
+                            return False
 
                 progress.update_message("Tasks complete, cleaning...", done=99)
                 try:
