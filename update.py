@@ -82,11 +82,14 @@ def main(check_all: bool, redownload: str):
 
     software_objects = {}
 
-    cli.info("Retrieving newest versions...", vanish=True)
+    progress = cli.progress_bar("Retrieving newest versions...", vanish=True)
+    checked = 0
+    total_software = len(all_software)
     updated = 0
     check_redownload = not redownload == "none"
     for software in all_software:
-        cli.load("Retrieving compatibility for " + software, vanish=True)
+        checked = checked + 1
+        progress.update("Retrieving compatibility for " + software + "...", (checked / total_software) * 100)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
@@ -95,7 +98,7 @@ def main(check_all: bool, redownload: str):
         all_software[software]["hash"] = obj.hash
         software_objects[software] = obj
 
-    cli.success("Retrieved newest versions!", vanish=True)
+    progress.complete("Checked " + str(total_software) + " times for updates")
     # Update every server
     dependencies_updated = 0
     updated_servers = 0
