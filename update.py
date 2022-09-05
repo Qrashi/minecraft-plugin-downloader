@@ -147,7 +147,7 @@ def main(check_all: bool, redownload: str):
                                     software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
                                 ready = False  # Plugin incompatibility found, abort
                                 failing = failing + 1
-                                if dependency in server_info["auto_update"]["blocking"]:
+                                if dependency in server_info["auto_update"]["blocking"][version.string()]:
                                     diff = DAYS_SINCE_EPOCH - \
                                            server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
                                     if diff >= 3:
@@ -158,6 +158,10 @@ def main(check_all: bool, redownload: str):
                                 else:
                                     server_info["auto_update"]["blocking"][version.string()][
                                         dependency] = DAYS_SINCE_EPOCH
+
+                            else:
+                                if dependency in server_info["auto_update"]["blocking"][version.string()]:
+                                    server_info["auto_update"]["blocking"][version.string()].pop(dependency)
 
                         if ready:  # Ready to version increment!
                             if server_version.is_higher(version):
@@ -179,7 +183,7 @@ def main(check_all: bool, redownload: str):
                                          "Server updated to " + version.string())
 
                         else:
-                            progress.fail(server_name + " not compatible (" + str(failing) + " non-compatible)")
+                            progress.fail(server_name + " not compatible with " + version.string() + "(" + str(failing) + " non-compatible)")
 
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = {}
