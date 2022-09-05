@@ -89,7 +89,7 @@ def main(check_all: bool, redownload: str):
     check_redownload = not redownload == "none"
     for software in all_software:
         checked = checked + 1
-        progress.update("Retrieving compatibility for " + software + "...", (checked / total_software) * 100)
+        progress.update_message("Retrieving compatibility for " + software + "...", (checked / total_software) * 100)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
