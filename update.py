@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 from subprocess import run, PIPE
+from time import sleep
 
 from utils.static_info import DAYS_SINCE_EPOCH
 from utils.FileAccessField import FileAccessField
@@ -89,7 +90,7 @@ def main(check_all: bool, redownload: str):
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
-                        check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
+                    check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else updated
         all_software[software]["hash"] = obj.hash
         software_objects[software] = obj
@@ -123,10 +124,16 @@ def main(check_all: bool, redownload: str):
                         if not version.string() in server_info["auto_update"]["blocking"]:
                             server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
-                        cli.info("Checking " + server_name + " version compatibility for " + version.string(),
-                                 vanish=True)
+                        failing = 0
+                        sleep(0.2)
+                        progress = cli.progress_bar(
+                            "Checking " + server_name + " version compatibility for " + version.string(),
+                            vanish=True)
+                        dep_iter = 0
+                        dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
-                            if not server_info[dependency]["enabled"]:
+                            progress.update((dep_iter / dependencies_total) * 100)
+                            if not server_info["software"][dependency]["enabled"]:
                                 continue
                             if dependency not in all_software:
                                 # >> Typo in config
@@ -139,6 +146,7 @@ def main(check_all: bool, redownload: str):
                             if not version.fulfills(
                                     software.requirements):  # If there is no next minor, there IS no higher version -> the server is at MAX version which was ruled out above!
                                 ready = False  # Plugin incompatibility found, abort
+                                failing = failing + 1
                                 if dependency in server_info["auto_update"]["blocking"]:
                                     diff = DAYS_SINCE_EPOCH - \
                                            server_info["auto_update"]["blocking"][version.string()][dependency]["since"]
@@ -148,7 +156,8 @@ def main(check_all: bool, redownload: str):
                                                    diff) + " days",
                                                additional="Server version: " + server_version.string() + " " + dependency + " version requirement: " + software.requirements.string())
                                 else:
-                                    server_info["auto_update"]["blocking"][version.string()][dependency] = DAYS_SINCE_EPOCH
+                                    server_info["auto_update"]["blocking"][version.string()][
+                                        dependency] = DAYS_SINCE_EPOCH
 
                         if ready:  # Ready to version increment!
                             if server_version.is_higher(version):
@@ -163,11 +172,15 @@ def main(check_all: bool, redownload: str):
                                 version_access.update(pool.open(version_access.filepath).json,
                                                       version.string())
                             server_info["auto_update"]["blocking"].pop(version.string())
-                            cli.success(
+                            progress.complete(
                                 "Server " + server_name + " updated from " + server_version.string() + " to " + version.string())
                             server_version = version
                             report_event("updater - " + server_name,
                                          "Server updated to " + version.string())
+
+                        else:
+                            progress.fail(server_name + " not compatible (" + str(failing) + " non-compatible)")
+
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = {}
 
