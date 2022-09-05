@@ -126,6 +126,8 @@ def main(check_all: bool, redownload: str):
                         cli.info("Checking " + server_name + " version compatibility for " + version.string(),
                                  vanish=True)
                         for dependency in server_info["software"]:
+                            if not server_info[dependency]["enabled"]:
+                                continue
                             if dependency not in all_software:
                                 # >> Typo in config
                                 cli.fail(
@@ -151,6 +153,7 @@ def main(check_all: bool, redownload: str):
                         if ready:  # Ready to version increment!
                             if server_version.is_higher(version):
                                 # Don't "downgrade" or "upgrade" to the "same version" (current game version can be in the pool twice)
+                                server_info["auto_update"]["blocking"].pop(version.string())
                                 continue
                             changed = True
                             if server_info["version"]["type"] == "version":  # Save version as string

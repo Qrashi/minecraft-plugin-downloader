@@ -55,10 +55,11 @@ def execute(task: dict, directory: str, replace: Callable[[str], str], final_fil
         # Write data to file
         file = pool.open(task["value"])
         for change in task["value"]["changes"]:
-                current = file.json
-                for access in change["path"]:
-                    current = current[access]
-                current = replace(change["value"])
+            current = file.json
+            for access in change["path"]:
+                current = current[access]
+            current = replace(change["value"])
+        return True
 
     report(severity, "Task \"" + task_type + "\" not found", "Task not found", additional="Last update: " + last_check)
     return False

@@ -57,6 +57,7 @@ This is a little documentation for the data structures used in these scripts:
 ### errors.json
 
 Stores occurred errors.
+You may back up stored errors to an archive using ``archive.py``
 
 ```
 errors.json: [error, error, error, ...]
@@ -75,6 +76,7 @@ error: {
 ### events.json
 
 Stores occurred events.
+You may back up stored events to an archive using ``archive.py``
 
 ```
 events.json: [event, event, event, ...]
@@ -96,10 +98,18 @@ servers.json: {name: server, name: server, name: server, ...}
 server: {
 N   auto_update: {
 N       enabled: boolean > true or false
-N       blocking: [
-N           blocking_software: {
-N               name: Name of software
-N               since: First time the software has blocked upgrade (timestamp)
+N       blocking: {
+N           game_version: { version attempted to update to
+N               software: int; timestamp since the software has first blocked the update (software is software name)s
+N           }
+N       }
+N       on_update: [
+N           Tasks to do on server updating to a new version
+N           You may use variables in every line that has been marked with an A:
+N           * You may use %old_version%
+N           * You may use %new_version%
+N           {
+N               tasks (see in sources.json)
 N           }
 N       ]
 N   }
@@ -201,41 +211,46 @@ N       enabled: Enable tasks to execute after downloading the newest build
         cleanup: boolean; clean up the files after an error (good for investigating errors)
         tasks: [
             {
-                type: Type of task; Types of tasks:
-                * run: Run a console command in the tmp directory (os.system)
-                * end: Specify what to do at the end of all tasks (optional)
-                (not implemented)* write: Write stuff to a jsonFile
-                value: Options for the tasks:
-A               * run: requires what to run example: "run": "java -jar xy.jar"
-                    You may use %build% for the newest build number.
-                    You may use %newest_version% for the newest detected compatible version
-                    If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
+                type: Type of task; Types of tasks e.g "run"
+                    * run: Run a console command in the tmp directory (os.system)
+                    * end: Specify what to do at the end of all tasks (optional)
+                    * write: Write stuff to a jsonFile
                 
-                * end: the file to replace the downloaded file with, keep the tmp folder or not; example:
-                {
-A                   file: (optional) the file to replace the previously downloaded file with !NO "/" before the name! (for example "paper_1.17.1.jar" will replace the contents of the downloaded file with the contents of "paper_1.17.1.jar")
-A                   keep: (optional) the path to copy the tmp directory to (for exaple "/home/minecraft/builds/%build%" will create the %build% directory and copy the contents of tmp into it.)
+                value: Options for the tasks:
+A                   * if type is run: requires what to run example: "run": "java -jar xy.jar"
                         You may use %build% for the newest build number.
                         You may use %newest_version% for the newest detected compatible version
                         If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
-                                            
-                    Please note that there is no way to "offically" keep the tmp directory in order to keep the software folder clean.
-                }
-                
-                * write: The file to write to; a list of things to change.
-                {
-A                   file: filename (must be of json format)
-                    changes: [
+                    so value = e.g "java -jar blah.jar"
+                    
+                    * end: the file to replace the downloaded file with, keep the tmp folder or not; example:
                         {
-A                           path: Path to field that requires a change e.g ["builds", "downloaded"] (can create values)
-A                           value: The new value
+    A                       file: (optional) the file to replace the previously downloaded file with !NO "/" before the name! (for example "paper_1.17.1.jar" will replace the contents of the downloaded file with the contents of "paper_1.17.1.jar")
+    A                       keep: (optional) the path to copy the tmp directory to (for exaple "/home/minecraft/builds/%build%" will create the %build% directory and copy the contents of tmp into it.)
                                 You may use %build% for the newest build number.
                                 You may use %newest_version% for the newest detected compatible version
-                                If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.                           
-                            
-                            This works similar to JSONAccessField
-                    ]
-                }
+                                If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
+                                                    
+                            Please note that there is no way to "offically" keep the tmp directory in order to keep the software folder clean.
+                        }
+                    so value = e.g {"file": "blah.file", "keep": "blah.blah"}
+                    
+                    * write: The file to write to; a list of things to change.
+                    {
+A                       file: filename (must be of json format)
+                        changes: [
+                            {
+A                               path: Path to field that requires a change e.g ["builds", "downloaded"] (can create values)
+A                               value: The new value
+                                    You may use %build% for the newest build number.
+                                    You may use %newest_version% for the newest detected compatible version
+                                    If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.                           
+                                
+                                This works similar to JSONAccessField
+                        ]
+                    }
+                    
+                    so value = e.g {"file": "file.file", "changes": {"path": [server_info", "version"], "value": "1.18.1"}}
                 progress: {
                     value: What percentage to display in the progress bar (0 - 100) e.g 57
                     message: What message to display in the progress bar e.g "Patching vanilla server..."
