@@ -300,7 +300,7 @@ config.json: {
     newest_game_version: URIAccessField to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
     git_auto_update: boolean; Try to automatically download newest version from git
-    default_header: The default header to use (dict)
+    default_headers: The default header to use (dict)
     config_version: config version (int)
 }
 ```

@@ -10,7 +10,7 @@ CONFIG = {
   },
   "sources_folder": "software",
   "version_check_interval": 3,
-  "default_headers": {
+  "default_headerss": {
     "User-Agent": "minecraft-plugin-downloader (github/qrashi/...) - automated service"
   },
   "config_version": 1

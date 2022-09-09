@@ -183,7 +183,7 @@ class Source:
             if "headers" in self.config["build"]:
                 headers = self.config["build"]["headers"]
             else:
-                headers = pool.open("data/config.json", default=CONFIG).json["default_header"]
+                headers = pool.open("data/config.json", default=CONFIG).json["default_headers"]
             response = get(url, stream=True, allow_redirects=True, headers=headers)
         except Exception as e:
             cli.fail(f"Error while downloading {self.source} from {self.server}: {e}")
