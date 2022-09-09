@@ -51,7 +51,7 @@ class FileAccessField:
                 data = data[attribute]
             except Exception as e:
                 report(context.failure_severity, f"FileAccesField - {context.software} - {context.task}",
-                       "Could not access sson, some error occured",
+                       "Could not access json, some error occured",
                        additional=f"file: {self.file}; file-content: f{json}; accessing f{self.path} ; trying to access f{attribute} in f{data}",
                        exception=e)
                 return
@@ -116,7 +116,7 @@ class WebAccessField:
                 task["type"] = "get_return"
             if task["type"] == "get_return":
                 # Integrity check
-                if ["url", "path"] in list(task):
+                if all(x in list(task) for x in ["url", "path"]):
                     task_headers = headers  # Task specific headers
                     if "headers" in task:
                         task_headers = task["headers"]  # Task headers should only be used for THIS task
@@ -127,7 +127,7 @@ class WebAccessField:
                            software=context.software)
                     return WebAccessFieldError("malformed \"get_return\" task, missing \"url\" or \"path\"!")
             elif task["type"] == "get_store":
-                if ["url", "path", "destination"] in list(task):
+                if all(x in list(task) for x in ["url", "path", "destination"]):
                     task_headers = headers  # Task specific headers
                     if "headers" in task:
                         task_headers = task["headers"]  # Task headers should only be used for THIS task

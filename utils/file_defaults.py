@@ -2,7 +2,6 @@ CONFIG = {
   "batch_size": 4096,
   "git_auto_update": True,
   "newest_game_version": {
-    "task": "get_return",
     "url": "https://www.papermc.io/api/v2/projects/paper",
     "path": [
       "versions"
