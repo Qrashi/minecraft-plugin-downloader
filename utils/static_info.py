@@ -3,6 +3,8 @@ import sys
 from os import makedirs, path
 from subprocess import run, PIPE
 
+from utils.file_defaults import CONFIG
+
 VERSION = "b2.0-rc1"
 COMMIT = "could not get commit. see errors.json"
 
@@ -13,7 +15,6 @@ from .events import report as report_event
 from .files import pool
 from .versions import Version
 from .context_manager import context
-
 
 if __name__ == "__main__":
     print("This file is meant to be imported!")
@@ -29,13 +30,14 @@ DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).
 
 if pool.open("data/versions.json").json["last_check"] == 0:
     # Create "software" folder
-    makedirs(path.abspath(pool.open("data/config.json").json["sources_folder"]), exist_ok=True)
+    makedirs(path.abspath(pool.open("data/config.json", default=CONFIG).json["sources_folder"]), exist_ok=True)
 
 if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
-        pool.open("data/config.json").json["newest_game_version"]):
+        pool.open("data/config.json", default=CONFIG).json["newest_game_version"]):
     # If there has not been a last check (initialisation) will always check versions.
-    if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > pool.open("data/config.json") \
-            .json["version_check_interval"]:
+    if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > \
+            pool.open("data/config.json", default=CONFIG) \
+                    .json["version_check_interval"]:
         current_version = Version(pool.open("data/versions.json").json["current_version"])
         # The version might not exist in the versions database because the database is nonexistent!
         context.software = "main"
@@ -43,7 +45,8 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
         context.failure_severity = 3
 
         cli.load("Checking for new version...", vanish=True)
-        versions_online = WebAccessField(pool.open("data/config.json").json["newest_game_version"]).execute({})
+        versions_online = WebAccessField(
+            pool.open("data/config.json", default=CONFIG).json["newest_game_version"]).execute({})
         if isinstance(versions_online, Exception):
             cli.fail(f"Could not retrieve newest game version online ({versions_online})")
             if pool.open("data/versions.json").json["last_check"]:

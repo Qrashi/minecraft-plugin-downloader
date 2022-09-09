@@ -3,6 +3,7 @@ import sys
 from time import sleep
 from typing import Callable
 
+from .file_defaults import CONFIG
 from .json_file import JsonFile
 
 try:
@@ -34,7 +35,7 @@ try:
 
     terminal_size = get_terminal_size().columns - 5
 except Exception as e:
-    config = JsonFile("data/config.json").json
+    config = JsonFile("data/config.json", default=CONFIG).json
     if "terminal_fallback_size" in config:
         terminal_size = config["terminal_fallback_size"]
     else:
@@ -57,7 +58,7 @@ if terminal_size < 20:
     sleep(2)
     terminal_size = 1000
 
-config = JsonFile("data/config.json").json
+config = JsonFile("data/config.json", default=CONFIG).json
 if "moon_mode" in config:
     loading_small = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
 else:

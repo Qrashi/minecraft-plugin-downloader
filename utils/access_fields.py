@@ -2,6 +2,7 @@ from typing import Union, Dict, List
 
 from utils.errors import report
 from utils.context_manager import context
+from utils.file_defaults import CONFIG
 from utils.files import pool
 from utils.web import get_managed
 
@@ -108,7 +109,7 @@ class WebAccessField:
         return result
 
     def execute(self, replaceable: Dict[str, str], requres_return: bool = True) -> Union[int, str, List, Dict, bool, None, Exception]:
-        headers = pool.open("data/config.json").json["default_header"]
+        headers = pool.open("data/config.json", default=CONFIG).json["default_header"]
         self.replaceable = replaceable
         for task in self.tasks:
             if "type" not in task:

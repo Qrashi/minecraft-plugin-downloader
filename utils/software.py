@@ -1,5 +1,6 @@
 from os import stat
 
+from utils.file_defaults import CONFIG
 from .cli_provider import cli
 from .dict_utils import enabled
 from .errors import report
@@ -33,7 +34,7 @@ class Software:
         self.severity = software_json[software]["severity"]
         self.requirements = VersionRangeRequirement(software_json[software]["requirements"])
         self.hash = software_json[software]["hash"]
-        self.file = pool.open("data/config.json").json["sources_folder"] + "/" + software_json[software]["file"]
+        self.file = pool.open("data/config.json", default=CONFIG).json["sources_folder"] + "/" + software_json[software]["file"]
 
     def get_hash(self):
         """
@@ -101,7 +102,7 @@ class Software:
                 copied = 0  # Copied bytes
                 total = stat(self.file).st_size
                 while True:
-                    piece = source.read(pool.open("data/config.json").json["batch_size"])
+                    piece = source.read(pool.open("data/config.json", default=CONFIG).json["batch_size"])
                     if not piece:
                         break  # End of file
                     copied += len(piece)

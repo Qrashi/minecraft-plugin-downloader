@@ -12,12 +12,13 @@ from .context_manager import context
 from .dict_utils import enabled
 from .errors import report
 from .events import report as report_event
+from .file_defaults import CONFIG
 from .files import pool
 from .io import abs_filename
 from .tasks import execute
 from .versions import Version, VersionRangeRequirement
 
-SOURCES_DIR = pool.open("data/config.json").json["sources_folder"]
+SOURCES_DIR = pool.open("data/config.json", default=CONFIG).json["sources_folder"]
 
 
 class Source:
@@ -182,7 +183,7 @@ class Source:
             if "headers" in self.config["build"]:
                 headers = self.config["build"]["headers"]
             else:
-                headers = pool.open("data/config.json").json["default_header"]
+                headers = pool.open("data/config.json", default=CONFIG).json["default_header"]
             response = get(url, stream=True, allow_redirects=True, headers=headers)
         except Exception as e:
             cli.fail(f"Error while downloading {self.source} from {self.server}: {e}")
@@ -212,7 +213,7 @@ class Source:
                 try:
                     dl = 0
                     total_length = int(total_length)
-                    for data in response.iter_content(chunk_size=pool.open("data/config.json").json["batch_size"]):
+                    for data in response.iter_content(chunk_size=pool.open("data/config.json", default=CONFIG).json["batch_size"]):
                         dl = dl + len(data)  # Should be 1024
                         temporary_file.write(data)
                         done = 100 - int(((total_length - dl) / total_length) * 100)  # 100 - (remaining / total)*100

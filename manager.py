@@ -2,6 +2,7 @@ import os
 import sys
 
 from utils.cli import CLIApp
+from utils.file_defaults import CONFIG
 from utils.files import pool
 from utils.sha244 import get_hash
 from utils.versions import is_valid, Version, VersionRangeRequirement
@@ -22,7 +23,7 @@ def main():
 
     detected_files = {}
     files = []
-    with os.scandir(pool.open("data/config.json").json["sources_folder"]) as directory:
+    with os.scandir(pool.open("data/config.json", default=CONFIG).json["sources_folder"]) as directory:
         for file in directory:
             if not file.name.endswith(".tmp"):
                 files.append(file.name)
