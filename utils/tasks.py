@@ -1,8 +1,8 @@
 from subprocess import run, PIPE
 from typing import Dict
 
-from utils.context_manager import context
 from .cli_provider import cli
+from utils.context_manager import context
 from .errors import report
 from .files import pool
 

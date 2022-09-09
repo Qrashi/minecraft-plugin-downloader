@@ -6,8 +6,8 @@ from typing import Union, Dict
 
 from requests import get
 
-from .access_fields import WebAccessField
 from .cli_provider import cli
+from .access_fields import WebAccessField
 from .context_manager import context
 from .dict_utils import enabled
 from .errors import report
