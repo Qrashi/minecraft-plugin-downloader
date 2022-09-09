@@ -1,4 +1,4 @@
-CONFIG = str({
+CONFIG = {
   "batch_size": 4096,
   "git_auto_update": True,
   "newest_game_version": {
@@ -14,4 +14,4 @@ CONFIG = str({
     "User-Agent": "minecraft-plugin-downloader (github/qrashi/...) - automated service"
   },
   "config_version": 1
-})
+}

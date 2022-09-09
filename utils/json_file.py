@@ -1,12 +1,14 @@
 import json
-from typing import Union
+from typing import Union, Dict, List
 
 from .io import abs_filename, load
 
 
 class JsonFile:
-    def __init__(self, filename: str, default: str = "{}"):
+    def __init__(self, filename: str, default: Union[str, Dict, List, int, float, bool] = "{}"):
         self.__filename = abs_filename(filename)
+        if type(default) is not str:
+            default = json.dumps(default, indent=4, sort_keys=True)
         json_file = load(self.__filename, default=default)
         self.json: Union[dict, list] = json.load(json_file)
         json_file.close()
