@@ -9,17 +9,18 @@ from .sha244 import get_hash
 from .source import Source
 import sys
 from .versions import VersionRangeRequirement
+from .context_manager import context
 
 
 class Software:
     def has_source(self) -> bool:
-        sources = pool.open("data/sources.json").json
+        sources = pool.open("data/sources.json", default="{}").json
         if self.software in sources:
             return enabled(sources[self.software])
         return False
 
     def __init__(self, software):
-        software_json = pool.open("data/software.json").json
+        software_json = pool.open("data/software.json", default="{}").json
         if software not in software_json:
             report(9, "software class", "Typo in config: Could not find specified software, exiting!",
                    additional="Provided software: " + software)
@@ -50,11 +51,13 @@ class Software:
 
     def retrieve_newest(self, check: bool, force_retrieve: bool) -> bool:
         """
-        Retrieves newest version from the internet if possible
-        :param force_retrieve: bool; Always download newest build
+        Retrieves the newest version from the internet if possible
+        :param force_retrieve: bool; Always download the newest build
         :param check: bool; Always fetch compatibility
         :return bool: Dependency was updated in some way
         """
+        context.failure_severity = self.severity
+        context.software = self.software
         if self.has_source():
             updated = self.source.update(check, force_retrieve)
             self.hash = self.get_hash()
@@ -73,7 +76,10 @@ class Software:
         :param server: Name of the server
         :return bool: If the server was updated
         """
-        servers = pool.open("data/servers.json").json
+        context.failure_severity = self.severity
+        context.software = self.software
+        context.task = f"copying to server \"{server}\""
+        servers = pool.open("data/servers.json", default="{}").json
         server_info = servers[server]
         destination_path = server_info["path"] + server_info["software"][self.software]["copy_path"]
         progress = cli.progress_bar("Updating " + self.software + " in " + server, vanish=True)
@@ -83,7 +89,7 @@ class Software:
         except Exception as e:
             report(self.severity, "copy - " + self.software + " > " + server,
                    "Could not generate destination file at " + self.file + "! Could be a permission error.",
-                   exception=e)
+                   exception=e, software=self.software)
             progress.fail("Could not copy " + self.software + " to " + server + ": ")
             print(e)
             cli.warn("Skipping copy...")
@@ -104,7 +110,7 @@ class Software:
                 progress.complete("Updated " + self.software + " in " + server + "!")
         except Exception as e:
             report(self.severity, "copy - " + self.software + " > " + server, "Copy process did not finish: ",
-                   exception=e)
+                   exception=e, software=self.software)
             progress.fail("Update failed: ")
             print(e)
             cli.warn("Skipping copy")

@@ -1,18 +1,19 @@
 import datetime
+import sys
 from os import makedirs, path
 from subprocess import run, PIPE
-from requests import get
-import sys
 
-VERSION = "a1.2-rc2"
+VERSION = "b2.0-rc1"
 COMMIT = "could not get commit. see errors.json"
 
-from utils.URLAccessField import URLAccessField
+from utils.access_fields import WebAccessField
 from .cli_provider import cli
 from .dict_utils import enabled
 from .events import report as report_event
 from .files import pool
 from .versions import Version
+from .context_manager import context
+
 
 if __name__ == "__main__":
     print("This file is meant to be imported!")
@@ -25,7 +26,6 @@ else:
     COMMIT = commit.stdout.decode('utf-8')
 
 DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
-STATIC_VERSIONS = [Version("1.0")]
 
 if pool.open("data/versions.json").json["last_check"] == 0:
     # Create "software" folder
@@ -38,49 +38,47 @@ if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
             .json["version_check_interval"]:
         current_version = Version(pool.open("data/versions.json").json["current_version"])
         # The version might not exist in the versions database because the database is nonexistent!
+        context.software = "main"
+        context.task = "fetching newest game versions"
+        context.failure_severity = 3
 
-        url_access_field = URLAccessField(pool.open("data/config.json").json["newest_game_version"])
         cli.load("Checking for new version...", vanish=True)
-        try:
-            response = get(url_access_field.url).json()
-            versions_online = url_access_field.access(response)
-            versions_json = pool.open("data/versions.json")
-            versions_json.json["versions"] = []
-            remote = current_version
-            for version in versions_online:
-                version = Version(version)  # Again, the versions database might not exist at this point
-                versions_json.json["versions"].append(version.string())
-                if version.is_higher(remote):
-                    remote = version
-                major_only = Version((version.major, "")).string()
-                if major_only not in versions_json.json["versions"]:
-                    versions_json.json["versions"].append(major_only)
-            for static_version in STATIC_VERSIONS:
-                versions_json.json["versions"].append(static_version.string())
-        except Exception as e:
-            from .errors import report
-            report(3, "Could not fetch newest game version:", "Error while executing get request and decoding data.",
-                   exception=e)
+        versions_online = WebAccessField(pool.open("data/config.json").json["newest_game_version"]).execute({})
+        if isinstance(versions_online, Exception):
+            cli.fail(f"Could not retrieve newest game version online ({versions_online})")
             if pool.open("data/versions.json").json["last_check"]:
                 cli.fail("Error while retrieving data for first time setup, cannot continue!")
                 cli.fail(
                     "This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
-                print(e)
+                print(versions_online)
                 sys.exit()
-            remote = current_version
-        if current_version.matches(remote):
+
+        versions_json = pool.open("data/versions.json").json
+        if type(versions_online) is list:
+            highest = Version("1.0")
+            for version in versions_online:
+                version = Version(version)
+                if version.string() not in versions_json["versions"]:
+                    versions_json["versions"].append(version.string())
+                if version.is_higher(highest):
+                    highest = version
+        else:
+            highest = Version(versions_online)
+            versions_json["versions"].append(highest.string())
+
+        if current_version.matches(highest):
             pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
         else:
-            pool.open("data/versions.json").json["current_version"] = remote.string()
+            pool.open("data/versions.json").json["current_version"] = highest.string()
             if pool.open("data/versions.json").json["last_check"] == 0:
                 pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
                 report_event("Initialisation",
-                             "Initialisation complete, the current minecraft version was set to " + remote.string())
+                             "Initialisation complete, the current minecraft version was set to " + highest.string())
                 # On first initialisation. the version is 1.0 so rather give a "initialisation complete" event
                 cli.success("Initialisation complete!")
                 pool.sync()
                 sys.exit()
             else:
                 pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
-                report_event("Game version checker", "The game version was updated to " + remote.string())
-                cli.success("Fetched new minecraft version: " + remote.string())
+                report_event("Game version checker", "The game version was updated to " + highest.string())
+                cli.success("Fetched new minecraft version(s): " + highest.string())

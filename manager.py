@@ -5,12 +5,16 @@ from utils.cli import CLIApp
 from utils.files import pool
 from utils.sha244 import get_hash
 from utils.versions import is_valid, Version, VersionRangeRequirement
+from utils.context_manager import context
 
 
 def main():
+    context.task = "managing dependencies"
+    context.failure_severity = 9
+    context.software = "manager"
     cli.say("Starting, scanning software directory...")
 
-    all_software = pool.open("data/software.json").json
+    all_software = pool.open("data/software.json", default="{}").json
 
     software_file_list = []
     for software in all_software.values():
@@ -63,8 +67,8 @@ def main():
 
 
 def remove(file: str):
-    software_file = pool.open("data/software.json")
-    sources_file = pool.open("data/sources.json")
+    software_file = pool.open("data/software.json", default="{}")
+    sources_file = pool.open("data/sources.json", default="{}")
     all_software = software_file.json
 
     cli.update_sender("RM")
@@ -97,7 +101,7 @@ def remove(file: str):
         cli.fail("Aborting")
         sys.exit()
 
-    servers_file = pool.open("data/servers.json")
+    servers_file = pool.open("data/servers.json", default="{}")
 
     if rm_files:
         servers_rm = []
@@ -123,7 +127,7 @@ def remove(file: str):
 
 
 def add(file: str):
-    software_file = pool.open("data/software.json")
+    software_file = pool.open("data/software.json", default="{}")
     all_software = software_file.json
 
     cli.update_sender("ADD")

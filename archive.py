@@ -13,7 +13,7 @@ def get_time(timestamp: int) -> str:
 def main(silent: bool):
     cli.update_sender("ARM")
     cli.load("Accessing archive database & current errors", vanish=True)
-    errors_file, events_file = JsonFile("data/errors.json"), JsonFile("data/events.json")
+    errors_file, events_file = JsonFile("data/errors.json", default="[]"), JsonFile("data/events.json")
     archive_info = JsonFile("data/archive/archive.json",
                             default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
                                                                                                                   "\""))
@@ -41,10 +41,12 @@ def main(silent: bool):
 
 
 def archive(start: int, end: int, silent: bool):
+    dir_name = f"archive from {get_time(start)} to {get_time(end)}"
     if not silent:
-        dir_name = cli.ask("Please enter archive name (blank for default): ")
-        if dir_name == "":
-            dir_name = f"archive from {get_time(start)} to {get_time(end)}"
+        new_name = cli.ask("Please enter archive name (blank for default): ")
+        if new_name != "":
+            dir_name = new_name
+
     archive_data, archived_errors, archived_events = JsonFile(f"data/archive/{dir_name}/data.json"), JsonFile(
         f"data/archive/{dir_name}/errors.json"), JsonFile(f"data/archive/{dir_name}/events.json")
     errors, events = JsonFile("data/errors.json", default="[]"), JsonFile("data/events.json", default="[]")

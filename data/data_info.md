@@ -5,54 +5,85 @@ This is a little documentation for the data structures used in these scripts:
 #### Explanation: <br>
 
 ```N``` at the start of a line: This field is **not required**! <br>
-```P``` at the start of a line: This field supports REPLACING, see below.
+```P``` at the start of a line: This field supports REPLACING, see below.<br>
+```W``` at the start of a line: This field supports WebAccessFields, see below
 
 #### General data types:
 
-* URLAccessField:
-    * Advantages:
-        * Specifies which part of a response the programm should use
-        * e.g a URL returns a dict and we only want to use a specific field
-        * Or even if the field is buried inside of multiple other fields
-        * Easy to use, even just a URL is enough
+* URIAccessField:
+    * Usage:
+        * If you want to use only a specific part of a json dictionary, this will help you get the needed data
     * Syntax
-        * No need to access a specific field:
+        * The data is already the data you want:
       ```
-      field: URL
+      [] - this is a valid URIAccessField
       ```
-        * Need to access a specific field
+        * The data is under "versions", "newest"
       ```
-      field: {
-        URL: URL to retrieve
-        access: [
-          field (string),
-          field (string),
-          ...  
-        ]
-      }
+      [
+          "versions",
+          "newest"
+      ]
       ```
-      Imagine this is the response to a version query:
+      So if the FULL .json would look like this:
        ```json
       {
       "info": {
-        "versions:": [111,123,231]
+        "versions:": ["1.18","1.19","1.20"]
       },
       "status":  "OK"
       }    
       ```
-      To access the "versions" field, you would use the following URLAccessField:
+      To return the LAST version you would do this:
       ```json
-      {
-        "URL": "https://blah.blah.blah",
-        "access":  [
-          "info",
-          "versions"  
-        ]
-      }    
+      [
+        "info",
+        "versions",
+        -1
+      ]    
       ```
-      You can use a URLAccessField in every URL field. If you can't use one, it will be marked with a ```A``` letter at
-      the start of the line.
     * A fine example of this type in use can be seen in the config.json file.
+
+* WebAccessFields
+  * WebAccessFields are an easy way to retrieve data from the web.
+  * All requests you make will be cached, so if you request the same URL twice, it's no problem
+    * WebAccessFields work the following way:
+      * If there is a field marked with a ```W``` at the start of the line you can either:
+      * put ONLY a get_return task as a valid WebAccessField (field = {"type": "get_return", "url": "blah"})
+      * put a list of tasks to retrieve the wanted data
+        * General task set-up:
+        ```
+        task = {
+            type: task type as string (return, get_store, get_return, set_headers)
+            
+            Task specific fields:
+            * set_headers:
+                Set default headers to use while making requests for these WebAccessFields
+                It is currently not possible to use the variables below.
+                Please open an issue if you would like to use such feature.
+            headers: {headers}
+            
+            * get_store:
+                Get information from the web and store it into a variable.
+                Use variable at any time using %variable_name%
+            url: "url",
+            path: {URIAccessField to retrieve the correct JSON data},
+            destination: "destination_variable_name" (WITHOUT % at the start and end),
+            headers: {optional}
+            
+            * return
+                Return a compiled string
+            value: "string to return"    
+        
+            * get_return:
+                Get information from the web and return it (for example return newest build ID)
+            url: "url",
+            path: {URIAccessField to retrieve the correct JSON data},
+            headers: {optional}
+        }
+      ```
+      * If you only want to return a string (for example when you need to return the URL to download the newest artifact) you can just put a string as a valid WebAccessField
+      e.g task = "www.url_with%variables%"
 
 ### errors.json
 
@@ -120,7 +151,7 @@ N   }
              If version: The version as a string
              If file: {
                   file: path to file
-                  access: How to navigate to the version string (like in URLAccessField)
+                  access: How to navigate to the version string (like in URIAccessField)
              }
         Hardware won't be used by the script itself, so you can add custom tags like
         port
@@ -169,41 +200,49 @@ This files stores data on how to download new software versions
 ```
 sources.json: {name: source, name: source, name: source, ...}
 
-A at the start of a line indicates support for replacing non-static information like new version buildID
-
 source: {
-N   cache_results: Enable / disable usage of request result cache; boolean
     server: The name of the API / server to download from in text (e.g: "paper API")
-N   headers: The headers to use. Useful for authentification
 N   compatibility:
-        remote: URLAccess field to an array of (compatible) versions
-        behaviour: How to handle this array / string
-            If the URL points to a ARRAY of compatible versions:
-                "all|minor": All versions in this array are compatible with the software ("1.6 - 1.8") ALERT: Wont include higher 1.8 versions
-                "max|minor": Only the EXACT newest version is compatible with the software (only uses the highest version from the versions array "1.17") 
+W       remote: WebAccessField to view compatible versions
+            You may use %build% as the last buildID (will be out of date if check mode is "always")
+            You may use %newest_version%, %newest_major% (1.x) and %newest_minor% (.x), they will represent the LAST compatible versions
+        check: When to check for the newest compatibility
+            possible settings:
+            "always": always check for compatibility before checking for the newest build
+                      this can be useful if the software uses "per-version" build IDs and
+                      you need to "retrieve" the newest build for the newest version
+            "build": check for new compatibility on recieving a new build
+            
+            if you DON't want to check for compatibility - remove the whole compatibility section        
+            you can still use %newest_version%, it will then put in the newest version stored in software.json
+        behaviour: How to handle an update to compatibility
+            If the URL you pointed to in "remote" shows a new update, this setting will 
+            decide what to to with the new data
+            
+            If the URL points to a ARRAY of compatible versions (e.g ["1.19", "1.19.1", "1.19.2"]):
+                "all|minor": All versions in this array are compatible with the software ("1.19 - 1.19.2") ALERT: Wont include higher 1.19.2 versions
+                "max|minor": Only the EXACT NEWESt version is compatible with the software (-> ONLY "1.19.2") 
                 "all|major": All versions and minor versions of maximum version are compatible (would convert "1.6 - 1.8" to "1.6 - 1.8.99")
-                "max|major": All minor versions for the maximum major versions are compatible (converts "1.17 - 1.17" to "1.17 - 1.17.99")
-                "extend|major": Extend the previous up to the newest highest possible minimum version for the major version
+                "max|major": All minor versions for the maximum major versions are compatible (converts "1.17 - 1.17.1" to "1.17 - 1.17.99")
+                "extend|major": Extend the previous up to the newest highest possible minimum version for the major version (useful for software that doesnt break on minor version updates)
                 "extend|minor": Extend to the hightes exact version.
-            If the URL points to a SINGLE compatible version
+            If the URL points to a SINGLE compatible version (e.g "1.17")
                 "precise|major": All minor versions for the major versions are supported: "1.17" > "1.17 - 1.17.99"
-                "extend|major": Extend the previous compatibility to the maximum minor version of the recieved major version; "1.14 - 1.17.1" + "1.18" > "1.14 - 1.18.99"
+                "extend|major": Extend the previous compatibility to the all minor versions of this major version (compatible up to "1.17.99")
                 "extend|minor": Extend the previous compatibility to the recieved version; "1.14 - 1.17.1" + "1.18" > "1.14 - 1.18"
                 "precise|minor": Only support the recieved version.
     build: {
-A       download: The URL to download a specific version from
-            You may use %build% for the newest build number.
-            You may use %newest_version% for the newest detected compatible version
-            If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
-            You may use %artifact% for the artifact name.
-        local: The local build ID. Read below for type info.
-N       name: The URL to fetch the artifact name
-            You may use %build% for the newest build number.
-            You may use %newest_version% for the newest detected compatible version
-            If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
-        remote: The URL to download build information from.
-            NOTE: If the URL returns a single build id which is the newest
-            it can be a string Build ID.
+N       enabled: true / false
+
+        You can use %newest_version%, it will be updated according to your "check" setting.
+
+W       download: A WebAccessField pointing to the URL to download the latest buildID
+N       headers: headers that will be used while DOWNLOADING the newest artifact
+            Not for every WebAccessField of this source
+W       remote: WebAccessField pointing to the newest build ID
+            You can point to a list, the program will try to find the newest buildID (if buildID is convertable to int)
+            If the newest buildID is always the last int in a list, please use -1 as the last URI access parameter (see URIAccessField)
+        local: The local build ID. can be anything.
     }
     tasks: {
 N       enabled: Enable tasks to execute after downloading the newest build
@@ -223,18 +262,6 @@ A                   * if type is run: requires what to run example: "run": "java
                         You may use %newest_version% for the newest detected compatible version
                         If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
                     so value = e.g "java -jar blah.jar"
-                    
-                    * end: the file to replace the downloaded file with, keep the tmp folder or not; example:
-                        {
-    A                       file: (optional) the file to replace the previously downloaded file with !NO "/" before the name! (for example "paper_1.17.1.jar" will replace the contents of the downloaded file with the contents of "paper_1.17.1.jar")
-    A                       keep: (optional) the path to copy the tmp directory to (for exaple "/home/minecraft/builds/%build%" will create the %build% directory and copy the contents of tmp into it.)
-                                You may use %build% for the newest build number.
-                                You may use %newest_version% for the newest detected compatible version
-                                If there is no way to check for the latest compatible version, %newest_version% will be replaced with the newest game version.
-                                                    
-                            Please note that there is no way to "offically" keep the tmp directory in order to keep the software folder clean.
-                        }
-                    so value = e.g {"file": "blah.file", "keep": "blah.blah"}
                     
                     * write: The file to write to; a list of things to change.
                     {
@@ -270,10 +297,11 @@ A                               value: The new value
 config.json: {
     batch_size: Batch size for copying (amount of RAM the copy operation will take)
     sources_folder: Software folder (Where all software is stored)
-    newest_game_version: URLAccessField to retrieve the latest game version.
+    newest_game_version: URIAccessField to retrieve the latest game version.
     version_check_interval: The interval (in days) between game version checks.
     git_auto_update: boolean; Try to automatically download newest version from git
     default_header: The default header to use (dict)
+    config_version: config version (int)
 }
 ```
 

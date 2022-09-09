@@ -5,7 +5,7 @@ from subprocess import run, PIPE
 from time import sleep
 
 from utils.static_info import DAYS_SINCE_EPOCH
-from utils.FileAccessField import FileAccessField
+from utils.access_fields import FileAccessField
 from utils.argparser import args
 from utils.cli_provider import cli
 from utils.errors import report
@@ -15,38 +15,37 @@ from utils.software import Software
 from utils.versions import Version
 from utils.dict_utils import enabled
 from utils.tasks import execute
+from utils.context_manager import context
+from utils.file_defaults import CONFIG
 
-def main(check_all: bool, redownload: str):
+
+def main(check_all: bool, re_download: str):
+    context.software = "main"
+    context.failure_severity = 10
+    context.task = "loading configurations"
     if check_all:
         cli.info("Checking compatibility for every software")
     cli.load(f"Starting update, loading software data...", vanish=True)
 
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
 
-    software_file = pool.open("data/software.json")
-    servers = pool.open("data/servers.json")
+    software_file = pool.open("data/software.json", default="{}")
+    servers = pool.open("data/servers.json", default="{}")
     all_software = software_file.json
-    config = pool.open("data/config.json").json
+    config = pool.open("data/config.json", default=CONFIG).json
     cli.success("Loaded configurations...", vanish=True)
 
+    context.task = "updating configurations"
     if "config_version" not in config:
-        config["config_version"] = 0
-        for server_config in servers.json.values():
-            if "auto_update" in server_config:
-                server_config["auto_update"]["blocking"] = {}
-        report_event("config", "Config version was increased to 0, blocking elements were RESET")
-        cli.success("Fixed blocking lists - BLOCKING software has been reset")
+        if config["config_version"] < 1:
+            cli.fail("A lot of breaking changes have been introduced since the last update.")
+            cli.info("Please update all URLAccessFields to the new WebAccessFields")
+            cli.info("When you are done, set the config_version in the config to 1.")
+            cli.fail("Until then, you will not be able to use this program.")
+            cli.info("You may delete your current config to generate a new (valid) one.")
+            sys.exit()
 
-    if "git_auto_update" not in config:
-        config["git_auto_update"] = True
-        report_event("git", "Automatic updates have been enabled!")
-        cli.success("Activated automatic updates")
-
-    if "default_header" not in config:
-        config["default_header"] = {'User-Agent': 'Automated update script (github/Qrashi/minecraft-plugin-downloader)'}
-        report_event("config", "Default header has been set.")
-        cli.success("Set default header.")
-
+    context.task = "checking for git-updates"
     if config["git_auto_update"]:
         cli.info("Checking for git updates...", vanish=True)
 
@@ -83,18 +82,19 @@ def main(check_all: bool, redownload: str):
 
     software_objects = {}
 
+    context.task = "checking for new software updates"
     progress = cli.progress_bar("Checking for newest versions...", vanish=True)
     checked = 0
     total_software = len(all_software)
     updated = 0
-    check_redownload = not redownload == "none"
+    check_re_download = not re_download == "none"
     for software in all_software:
         checked = checked + 1
         progress.update_message("Checking " + software + "...", (checked / total_software) * 100)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
-                    check_redownload and obj.software == redownload))  # Retrieve the newest software, update hashes increment counter if successful
+                    check_re_download and obj.software == re_download))  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else updated
         all_software[software]["hash"] = obj.hash
         software_objects[software] = obj
@@ -104,6 +104,9 @@ def main(check_all: bool, redownload: str):
     dependencies_updated = 0
     updated_servers = 0
     for server_name, server_info in servers.json.items():
+        context.software = server_name
+        context.failure_severity = 10
+        context.task = "getting information"
         cli.info("Updating " + server_name, vanish=True)
         changed = False
         # Get the server version
@@ -111,9 +114,11 @@ def main(check_all: bool, redownload: str):
             server_version = Version(server_info["version"]["value"])
         else:
             version_access = FileAccessField(server_info["version"]["value"])
-            server_version = Version(version_access.access(pool.open(version_access.filepath).json))
+            server_version = Version(version_access.access())
         # game version detection for dependency
         if "auto_update" in server_info:
+            context.failure_severity = 5
+            context.task = "auto-updating server, getting eligible versions"
             # Check if server dependencies are ready
             # If an auto update is even required
             if server_info["auto_update"]["enabled"]:
@@ -125,6 +130,7 @@ def main(check_all: bool, redownload: str):
                         version_iter = version_iter.get_next_minor()
                         higher_versions.append(version_iter)
                     for version in higher_versions:
+                        context.task = "auto-updating server, checking " + version.string()
                         if not version.string() in server_info["auto_update"]["blocking"]:
                             server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
@@ -169,6 +175,7 @@ def main(check_all: bool, redownload: str):
                                     server_info["auto_update"]["blocking"][version.string()].pop(dependency)
 
                         if ready:  # Ready to version increment!
+                            context.task = "server eligible for update!"
                             if server_version.is_higher(version):
                                 # Don't "downgrade" or "upgrade" to the "same version" (current game version can be in the pool twice)
                                 server_info["auto_update"]["blocking"].pop(version.string())
@@ -178,25 +185,24 @@ def main(check_all: bool, redownload: str):
                                 servers.json[server_name]["version"]["value"] = version.string()
                             else:
                                 version_access = FileAccessField(server_info["version"])
-                                version_access.update(pool.open(version_access.filepath).json,
-                                                      version.string())
+                                version_access.update(version.string())
                             server_info["auto_update"]["blocking"].pop(version.string())
                             progress.update_message(
                                 "Updating " + server_name + " from " + server_version.string() + " to " + version.string(), 0)
                             update = True
                             if "on_update" in server_info["auto_update"]:
                                 # Execute tasks
-                                def replace(inp: str) -> str:
-                                    replaced = inp.replace("%old_version%", server_version.string())
-                                    return replaced.replace("%new_version%", version.string())
+                                context.failure_severity = 8
+                                context.software = server_name
+                                context.task = "updating server to " + version.string()
                                 for task in server_info["auto_update"]["on_update"]:
                                     if enabled(task):
                                         progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
-                                        if not execute(task, server_info["path"], replace, None, server_name, DAYS_SINCE_EPOCH, 10):
+                                        if not execute(task, server_info["path"], {"%old_version%": server_version.string(), "%new_version%": version.string()}):
                                             # Error while executing task
                                             update = False
                                             progress.fail("Could not update " + server_name + " to " + version.string() + ". See errors.json")
-                                            report(10, "update of " + server_name, "could not execute all update tasks. some things may need to be cleaned up.", additional="script doesn't clean up automatically.")
+                                            report(8, "update of " + server_name, "could not execute all update tasks. some things may need to be cleaned up.", additional="script doesn't clean up automatically.")
                                             break
                             if update:
                                 server_version = version
@@ -210,27 +216,35 @@ def main(check_all: bool, redownload: str):
             else:  # Version up to date
                 server_info["auto_update"]["blocking"] = {}
 
+        context.failure_severity = 8
+        context.software = server_name
+        context.task = "updating dependencies"
         cli.info("Updating plugins for " + server_name, vanish=True)
         for dependency, info in server_info["software"].items():
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
                     "Error while updating " + server_name + " server: required software " + dependency + " not found in software register")
-                report(2, "updater - " + server_name,
+                report(8, "updater - " + server_name,
                        "Server has unknown dependency, server dependency file might have a typo!")
                 continue
             software = software_objects[dependency]
+            context.task = "updating " + dependency
             if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
                 if not server_info["software"][dependency]["enabled"]:
                     continue
                 if server_version.fulfills(software.requirements):
                     # Software IS compatible, copy is allowed > copy
                     software.copy(server_name)
+                    context.task = "copying " + dependency
                     changed = True
                     dependencies_updated = dependencies_updated + 1
 
         updated_servers = updated_servers + 1 if changed else updated_servers
 
+    context.failure_severity = 10
+    context.task = "finalizing"
+    context.software = "main"
     if updated != 0:
         cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
         cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
@@ -249,7 +263,7 @@ if __name__ == "__main__":
         sys.exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
-            report(10, "updater - main", "Updater quit unexpectedly! Uncaught exception: ",
+            report(context.failure_severity, "updater - main", f"Updater quit unexpectedly! {context.software} - {context.task}",
                    additional="Traceback: " + ''.join(traceback.format_exception(None, e, e.__traceback__)),
                    exception=e)
             cli.fail("ERROR: Uncaught exception: ")
