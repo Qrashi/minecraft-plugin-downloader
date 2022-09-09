@@ -12,7 +12,7 @@ from utils.errors import report
 from utils.events import report as report_event
 from utils.files import pool
 from utils.software import Software
-from utils.versions import Version
+from utils.versions import Version, check_game_versions
 from utils.dict_utils import enabled
 from utils.tasks import execute
 from utils.context_manager import context
@@ -27,6 +27,7 @@ def main(check_all: bool, re_download: str):
         cli.info("Checking compatibility for every software")
     cli.load(f"Starting update, loading software data...", vanish=True)
 
+    check_game_versions()
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
 
     software_file = pool.open("data/software.json", default="{}")

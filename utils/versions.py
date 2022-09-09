@@ -1,5 +1,6 @@
 from __future__ import annotations
 import sys
+from os import makedirs, path
 
 from typing import Union, Dict, Tuple
 
@@ -200,6 +201,9 @@ class VersionRangeRequirement:
 
 
 def check_game_versions():
+    if pool.open("data/versions.json").json["last_check"] == 0:
+        # Create "software" folder
+        makedirs(path.abspath(pool.open("data/config.json", default=CONFIG).json["sources_folder"]), exist_ok=True)
     if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
             pool.open("data/config.json", default=CONFIG).json["newest_game_version"]):
         # If there has not been a last check (initialisation) will always check versions.
