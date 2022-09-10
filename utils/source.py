@@ -296,7 +296,7 @@ class Source:
                 for task in self.config["tasks"]["tasks"]:
                     if enabled(task):
                         progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
-                        if not execute(task, tmp_dir, self.replaceable):
+                        if not execute(task, tmp_dir, self.replaceable, final_dest=f"{SOURCES_DIR}/{self.file}.tmp"):
                             clean_up()
                             return False
 
