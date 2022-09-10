@@ -36,6 +36,11 @@ class Source:
         self.config: dict = source_info
         all_software = pool.open("data/software.json", default="{}").json
 
+        if "headers" in self.config["build"]:
+            self.headers = self.config["build"]["headers"]
+        else:
+            self.headers = pool.open("data/config.json", default=CONFIG).json["default_headers"]
+
         self.severity = all_software[source]["severity"]
         self.file = all_software[source]["file"]
 
@@ -57,7 +62,7 @@ class Source:
 
     def check_compatibility(self):
         context.task = "updating compatibility"
-        new_compatibility = WebAccessField(self.config["compatibility"]["remote"]).execute(self.replaceable)
+        new_compatibility = WebAccessField(self.config["compatibility"]["remote"]).execute(self.replaceable, headers=self.headers)
         if isinstance(new_compatibility, Exception):
             cli.fail("Could not retrieve newest compatibility: " + str(new_compatibility))
             return False
@@ -132,7 +137,7 @@ class Source:
         if not enabled(self.config["build"]):
             return self.config["build"]["local"]
         context.task = "retrieving newest build"
-        buildID = WebAccessField(self.config["build"]["remote"]).execute(self.replaceable)
+        buildID = WebAccessField(self.config["build"]["remote"]).execute(self.replaceable, headers=self.headers)
         if isinstance(buildID, Exception):
             cli.fail(f"Could not retrieve newest buildID for {self.source} - {buildID}!")
             return self.config["build"]["local"]
@@ -175,16 +180,12 @@ class Source:
         :return:
         """
         context.task = "downloading newest build"
-        url = WebAccessField(self.config["build"][""]).execute(self.replaceable)
+        url = WebAccessField(self.config["build"][""]).execute(self.replaceable, headers=self.headers)
         if isinstance(url, Exception):
             cli.fail(f"Could not retrieve newest download URL for {self.source}: {url}")
             return False
         try:
-            if "headers" in self.config["build"]:
-                headers = self.config["build"]["headers"]
-            else:
-                headers = pool.open("data/config.json", default=CONFIG).json["default_headers"]
-            response = get(url, stream=True, allow_redirects=True, headers=headers)
+            response = get(url, stream=True, allow_redirects=True, headers=self.headers)
         except Exception as e:
             cli.fail(f"Error while downloading {self.source} from {self.server}: {e}")
             report(self.severity, f"download - {self.source}", "exception occurred while downloading!",

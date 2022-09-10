@@ -108,8 +108,7 @@ class WebAccessField:
             result = result.replace(this, str(that))
         return result
 
-    def execute(self, replaceable: Dict[str, str], requres_return: bool = True) -> Union[int, str, List, Dict, bool, None, Exception]:
-        headers = pool.open("data/config.json", default=CONFIG).json["default_headers"]
+    def execute(self, replaceable: Dict[str, str], requres_return: bool = True, headers: Dict = pool.open("data/config.json", default=CONFIG).json["default_headers"]) -> Union[int, str, List, Dict, bool, None, Exception]:
         self.replaceable = replaceable
         for task in self.tasks:
             if "type" not in task:
