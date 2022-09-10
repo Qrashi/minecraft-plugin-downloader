@@ -251,6 +251,10 @@ N       enabled: Enable tasks to execute after downloading the newest build
         tasks: [
             {
 N               enabled: wether task is enabled
+                progress: {
+                    value: What percentage to display in the progress bar (0 - 100) e.g 57
+                    message: What message to display in the progress bar e.g "Patching vanilla server..."
+                }
                 type: Type of task; Types of tasks e.g "run"
                     * run: Run a console command in the tmp directory (os.system)
                     * end: Specify what to do at the end of all tasks (optional)
@@ -279,11 +283,13 @@ A                               value: The new value
                     }
                     
                     so value = e.g {"file": "file.file", "changes": {"path": [server_info", "version"], "value": "1.18.1"}}
-                progress: {
-                    value: What percentage to display in the progress bar (0 - 100) e.g 57
-                    message: What message to display in the progress bar e.g "Patching vanilla server..."
-                }
-                
+                    
+                    * end
+                        Requres the destination to the final file (like artifacts/plugin.jar)
+                        The plugin will be copied to the main software folder.
+                        Only avialible when updating software and not avialible while updating a server after version increment
+                        
+                    so value = e.g "artifacts/plugin.jar"
             }
         ]
     }
