@@ -180,7 +180,7 @@ class Source:
         :return:
         """
         context.task = "downloading newest build"
-        url = WebAccessField(self.config["build"][""]).execute(self.replaceable, headers=self.headers)
+        url = WebAccessField(self.config["build"]["download"]).execute(self.replaceable, headers=self.headers)
         if isinstance(url, Exception):
             cli.fail(f"Could not retrieve newest download URL for {self.source}: {url}")
             return False
