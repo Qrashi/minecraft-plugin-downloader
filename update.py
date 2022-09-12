@@ -242,7 +242,7 @@ def main(check_all: bool, re_download: str):
                     dependencies_updated = dependencies_updated + 1
 
         updated_servers = updated_servers + 1 if changed else updated_servers
-        servers[server_name] = server_info
+        servers.json[server_name] = server_info
 
     context.failure_severity = 10
     context.task = "finalizing"
