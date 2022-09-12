@@ -16,11 +16,13 @@ def get_managed(url: str, headers: dict) -> Union[Dict, List, str, int, float, b
             request = get(url, headers=headers)
         except Exception as e:
             report(context.failure_severity, f"WebManager - {context.software} - {context.task}",
-                   "could not complete request - an error occurred.", exception=e, software=context.software)
+                   "could not complete request - an error occurred.", exception=e, software=context.software,
+                   additional=f"URL: {url}")
             return e
         if request.status_code != 200:
             report(context.failure_severity, f"WebManager - {context.software} - {context.task}",
-                   f"could not complete request - status code {request.status_code}", software=context.software)
+                   f"could not complete request - status code {request.status_code}", software=context.software,
+                   additional=f"URL: {url}")
             return FaultyStatusCodeException(f"could not complete request - status code {request.status_code}")
         requests[url] = request.json()
         return requests[url]

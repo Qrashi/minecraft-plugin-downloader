@@ -189,13 +189,13 @@ class Source:
         except Exception as e:
             cli.fail(f"Error while downloading {self.source} from {self.server}: {e}")
             report(self.severity, f"download - {self.source}", "exception occurred while downloading!",
-                   software=self.source, exception=e)
+                   software=self.source, exception=e, additional=f"URL: {url}")
             return False
         if response.status_code != 200:
             cli.fail(f"Error while downloading {self.source} from {self.server} - status code {response.status_code}!")
             report(self.severity, f"download - {self.source}",
                    f"Download finished with code {response.status_code}",
-                   software=self.source)
+                   software=self.source, additional=f"URL: {url}")
             return False
         total_length = response.headers.get('content-length')
         progress = cli.progress_bar(f"Downloading {self.source} from {self.server}", vanish=True)
