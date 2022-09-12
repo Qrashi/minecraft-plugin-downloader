@@ -119,7 +119,10 @@ class WebAccessField:
                     task_headers = headers  # Task specific headers
                     if "headers" in task:
                         task_headers = task["headers"]  # Task headers should only be used for THIS task
-                    return uri_access(task["path"], get_managed(self.replace(task["url"]), task_headers))
+                    result = get_managed(self.replace(task["url"]), task_headers)
+                    if isinstance(result, Exception):
+                        return result
+                    return uri_access(task["path"], result)
                 else:
                     report(context.failure_severity, f"WebAccessField - {context.software} - {context.task}",
                            "malformed get_return task. \"url\" or \"path\" is missing", additional=f"task data: {task}",
@@ -132,7 +135,7 @@ class WebAccessField:
                         task_headers = task["headers"]  # Task headers should only be used for THIS task
                     destination = task["destination"]
                     result = get_managed(self.replace(task["url"]), task_headers)
-                    if type(result) is Exception:
+                    if isinstance(result, Exception):
                         return result
                     self.replaceable[f"%{destination}%"] = uri_access(task["path"], result)
                 else:
