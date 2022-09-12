@@ -183,7 +183,7 @@ def main(check_all: bool, re_download: str):
                                 continue
                             changed = True
                             if server_info["version"]["type"] == "version":  # Save version as string
-                                servers.json[server_name]["version"]["value"] = version.string()
+                                server_info[server_name]["version"]["value"] = version.string()
                             else:
                                 version_access = FileAccessField(server_info["version"])
                                 version_access.update(version.string())
@@ -242,6 +242,7 @@ def main(check_all: bool, re_download: str):
                     dependencies_updated = dependencies_updated + 1
 
         updated_servers = updated_servers + 1 if changed else updated_servers
+        servers[server_name] = server_info
 
     context.failure_severity = 10
     context.task = "finalizing"
