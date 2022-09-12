@@ -113,7 +113,7 @@ def main(check_all: bool, re_download: str):
         context.failure_severity = 10
         context.task = "getting information"
         progress.update_message("Updating " + server_name, (servers_iter / servers_total) * 100)
-        sleep(0.2)
+        sleep(0.05)
         changed = False
         # Get the server version
         if server_info["version"]["type"] == "version":
@@ -220,11 +220,15 @@ def main(check_all: bool, re_download: str):
                 else:  # Version up to date
                     server_info["auto_update"]["blocking"] = {}
 
+        progress.update_message(f"updating {server_name} dependencies", (servers_iter / servers_total) * 100)
         context.failure_severity = 8
         context.software = server_name
         context.task = "updating dependencies"
-        cli.info("Updating plugins for " + server_name, vanish=True)
+        dep_total = len(server_info["software"])
+        dep_iter = 0
         for dependency, info in server_info["software"].items():
+            sleep(0.01)
+            progress.update((dep_iter / dep_total) * 100)
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
