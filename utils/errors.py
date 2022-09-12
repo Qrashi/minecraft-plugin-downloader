@@ -39,10 +39,12 @@ def report(severity: int, sender: str, reason: str, additional: str = "",
                                     "last_successful_software_check": all_sources[software]["last_check"],
                                     "additional": additional, "time": time, "stamp": stamp, "exception": str(exception),
                                     "version": VERSION, "commit": COMMIT})
+                return
         except Exception as _:
             errors.json.append({"severity": severity, "reason": reason, "from": sender, "software": software,
                                 "additional": additional, "time": time, "stamp": stamp, "exception": str(exception),
                                 "version": VERSION, "commit": COMMIT})
+            return
 
     errors.json.append({"severity": severity, "reason": reason, "from": sender,
                         "additional": additional, "time": time, "stamp": stamp, "exception": str(exception),
