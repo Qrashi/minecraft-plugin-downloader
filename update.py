@@ -102,13 +102,18 @@ def main(check_all: bool, re_download: str):
 
     progress.complete("Checked " + str(total_software) + " times for updates")
     # Update every server
+    servers_total = len(servers.json)
+    servers_iter = 0
     dependencies_updated = 0
     updated_servers = 0
+    progress = cli.progress_bar("Checking servers for updates")
     for server_name, server_info in servers.json.items():
+        servers_iter = servers_iter + 1
         context.software = server_name
         context.failure_severity = 10
         context.task = "getting information"
-        cli.info("Updating " + server_name, vanish=True)
+        progress.update_message("Updating " + server_name, (servers_iter / servers_total) * 100)
+        sleep(0.2)
         changed = False
         # Get the server version
         if server_info["version"]["type"] == "version":
@@ -136,9 +141,7 @@ def main(check_all: bool, re_download: str):
                             server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
                         failing = 0
-                        sleep(0.2)
-                        progress = cli.progress_bar(
-                            "Checking " + server_name + " version compatibility for " + version.string())
+                        progress.update_message("Checking " + server_name + " version compatibility for " + version.string(), 0)
                         dep_iter = 0
                         dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
