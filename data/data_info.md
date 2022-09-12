@@ -237,12 +237,12 @@ N       enabled: true / false
         You can use %newest_version%, it will be updated according to your "check" setting.
 
 W       download: A WebAccessField pointing to the URL to download the latest buildID
-N       headers: headers that will be used while accessing this source.
 W       remote: WebAccessField pointing to the newest build ID
             You can point to a list, the program will try to find the newest buildID (if buildID is convertable to int)
             If the newest buildID is always the last int in a list, please use -1 as the last URI access parameter (see URIAccessField)
         local: The local build ID. can be anything.
     }
+    headers: headers that will be used while accessing this source. (compatibility and other things)
     tasks: {
 N       enabled: Enable tasks to execute after downloading the newest build
         copy_downloaded: boolean; copy the downloaded file into tmp directory
