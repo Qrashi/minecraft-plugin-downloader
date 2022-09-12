@@ -36,7 +36,7 @@ class Source:
         self.config: dict = source_info
         all_software = pool.open("data/software.json", default="{}").json
 
-        if "headers" in self.config["build"]:
+        if "headers" in self.config:
             self.headers = self.config["build"]["headers"]
         else:
             self.headers = pool.open("data/config.json", default=CONFIG).json["default_headers"]
