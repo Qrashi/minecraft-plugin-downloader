@@ -214,8 +214,8 @@ def main(check_all: bool, re_download: str):
                         else:
                             progress.fail(server_name + " not compatible with " + version.string() + "(" + str(failing) + " non-compatible)")
 
-            else:  # Version up to date
-                server_info["auto_update"]["blocking"] = {}
+                else:  # Version up to date
+                    server_info["auto_update"]["blocking"] = {}
 
         context.failure_severity = 8
         context.software = server_name
