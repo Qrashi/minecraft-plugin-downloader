@@ -231,9 +231,9 @@ def main(check_all: bool, re_download: str):
                 continue
             software = software_objects[dependency]
             context.task = "updating " + dependency
+            if not server_info["software"][dependency]["enabled"]:
+                continue
             if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
-                if not server_info["software"][dependency]["enabled"]:
-                    continue
                 if server_version.fulfills(software.requirements):
                     # Software IS compatible, copy is allowed > copy
                     software.copy(server_name)
