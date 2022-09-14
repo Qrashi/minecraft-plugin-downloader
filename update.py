@@ -224,11 +224,8 @@ def main(check_all: bool, re_download: str):
         context.failure_severity = 8
         context.software = server_name
         context.task = "updating dependencies"
-        dep_total = len(server_info["software"])
-        dep_iter = 0
         for dependency, info in server_info["software"].items():
             sleep(0.01)
-            progress.update((dep_iter / dep_total) * 100)
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
