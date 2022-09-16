@@ -9,7 +9,7 @@ from .json_file import JsonFile
 try:
     from colorama import Fore, Style, init
 
-    init()  # Required in some cases for windows systems
+    init()  # Required in some cases for Windows systems
 except Exception as e_first:
     print("Error: Could not import / initialize colorama! Please install all dependencies (how-to in README.md)!")
     print(e_first)
@@ -58,12 +58,17 @@ if terminal_size < 20:
     sleep(2)
     terminal_size = 1000
 
-config = JsonFile("data/config.json", default=CONFIG).json
-if "moon_mode" in config:
+config = JsonFile("data/config.json", default=CONFIG)
+if "moon_mode" in config.json and config.json["moon_mode"]:
     loading_small = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
 else:
     loading_small = ["/", "|", "\\", "-"]
 loading_big = ["|#   |", "| #  |", "|  # |", "|   #|", "|   #|", "|  # |", "| #  |", "|#   |"]
+
+if "max_progressbar_size" in config.json:
+    max_progress_size = config.json["max_progressbar_size"]
+else:
+    max_progress_size = 20
 
 
 def cut_string(to_split: str, maximum: int) -> str:
@@ -92,7 +97,7 @@ class CLIApp:
             end = "\n"
         # The length of the "! UPD | " is fixed at 8 characters.
         if len(message) + 8 > terminal_size and enable_len_check:
-            # WONT FIT IN ONE LINE
+            # WON'T FIT IN ONE LINE
             message = cut_string(message, terminal_size - 8)
         print('\r\x1b[2K\r' + color + symbol + self.__sender + color + " " + message, end=end + Style.RESET_ALL)
 
@@ -162,13 +167,13 @@ class CLIApp:
     def progress_bar(self, message, vanish: bool = False):
         class ProgressBar:
             def calculate_multiplier(self):
-                space_left = terminal_size - 8 - len(
-                    self.__message) + 2  # 8 is the length of "⤓ TST | "; 2 are the [] brackets
+                space_left = max(terminal_size - 8 - len(
+                    self.__message) + 2, max_progress_size)  # 8 is the length of "⤓ TST | "; 2 are the [] brackets
                 if space_left >= 100:  # Maximum sized bar
                     self.__multiplier = 1
                     return
                 self.__multiplier = round(floor(space_left * 0.1) * 0.1,
-                                          1)  # Round to lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
+                                          1)  # Round to the lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
 
             def __init__(self, print_function):
                 self.__print_function = print_function
@@ -195,8 +200,8 @@ class CLIApp:
             def update(self, done):
                 done_modified = int(done * self.__multiplier)
                 self.__print_function(Fore.CYAN, "⤓", "[" + (
-                        '=' * done_modified) + (' ' * int(
-                    100 * self.__multiplier - done_modified)) + '] ' + self.__message, True, enable_len_check=False)
+                        '=' * done_modified) + (' ' * int(100 * self.__multiplier - done_modified)) + '] ' + self.__message,
+                                      True, enable_len_check=False)
 
         return ProgressBar(self.print)
 

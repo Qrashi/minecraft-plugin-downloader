@@ -112,7 +112,8 @@ def main(check_all: bool, re_download: str):
         context.software = server_name
         context.failure_severity = 10
         context.task = "getting information"
-        progress.update_message("Updating " + server_name, (servers_iter / servers_total) * 100)
+        prog = (servers_iter / servers_total) * 100
+        progress.update_message("Updating " + server_name, prog)
         sleep(0.05)
         changed = False
         # Get the server version
@@ -145,6 +146,7 @@ def main(check_all: bool, re_download: str):
                         dep_iter = 0
                         dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
+                            sleep(0.05)
                             progress.update((dep_iter / dependencies_total) * 100)
                             if not server_info["software"][dependency]["enabled"]:
                                 if dependency in server_info["auto_update"]["blocking"][version.string()]:
@@ -213,6 +215,7 @@ def main(check_all: bool, re_download: str):
                                 report_event("updater - " + server_name,
                                              "Server updated to " + version.string())
                                 progress.complete("Updated " + server_name + " to " + version.string() + "!")
+                                sleep(0.2)
 
                         else:
                             progress.fail(server_name + " not compatible with " + version.string() + "(" + str(failing) + " non-compatible)")
@@ -220,12 +223,16 @@ def main(check_all: bool, re_download: str):
                 else:  # Version up to date
                     server_info["auto_update"]["blocking"] = {}
 
-        progress.update_message(f"updating {server_name} dependencies", (servers_iter / servers_total) * 100)
         context.failure_severity = 8
         context.software = server_name
         context.task = "updating dependencies"
+        dependencies_total = len(server_info["software"])
+        dep_iter = 0
+        progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]", prog)
         for dependency, info in server_info["software"].items():
             sleep(0.01)
+            dep_iter = dep_iter + 1
+            progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]", prog)
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
@@ -240,7 +247,7 @@ def main(check_all: bool, re_download: str):
             if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
                 if server_version.fulfills(software.requirements):
                     # Software IS compatible, copy is allowed > copy
-                    software.copy(server_name)
+                    software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
                     context.task = "copying " + dependency
                     changed = True
                     dependencies_updated = dependencies_updated + 1
