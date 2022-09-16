@@ -71,10 +71,11 @@ class Software:
         self.hash = new_hash
         return False
 
-    def copy(self, server: str) -> bool:
+    def copy(self, server: str, dependency_number: str) -> bool:
         """
         Copies dependency into the server if possible.
         :param server: Name of the server
+        :param dependency_number: The "x/y" to display at the end of the progress bar
         :return bool: If the server was updated
         """
         context.failure_severity = self.severity
@@ -83,7 +84,7 @@ class Software:
         servers = pool.open("data/servers.json", default="{}").json
         server_info = servers[server]
         destination_path = server_info["path"] + server_info["software"][self.software]["copy_path"]
-        progress = cli.progress_bar("Updating " + self.software + " in " + server, vanish=True)
+        progress = cli.progress_bar(f"Updating {self.software} in {server} {dependency_number}", vanish=True)
         # Generate destination file...
         try:
             generate(destination_path, default="")
@@ -108,7 +109,7 @@ class Software:
                     copied += len(piece)
                     destination.write(piece)
                     progress.update((copied / total * 100))
-                progress.complete("Updated " + self.software + " in " + server + "!")
+                progress.complete(f"Updated {self.software} in {server}! {dependency_number}")
         except Exception as e:
             report(self.severity, "copy - " + self.software + " > " + server, "Copy process did not finish: ",
                    exception=e, software=self.software)

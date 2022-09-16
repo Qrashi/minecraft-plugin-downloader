@@ -307,6 +307,7 @@ config.json: {
     git_auto_update: boolean; Try to automatically download newest version from git
     default_headers: The default header to use (dict)
     config_version: config version (int)
+    max_progress_size: The maximum size (characters) a progress bar should use (except [] symbols); int
 }
 ```
 
