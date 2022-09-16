@@ -167,7 +167,7 @@ class CLIApp:
     def progress_bar(self, message, vanish: bool = False):
         class ProgressBar:
             def calculate_multiplier(self):
-                space_left = max(terminal_size - 8 - len(
+                space_left = min(terminal_size - 8 - len(
                     self.__message) + 2, max_progress_size)  # 8 is the length of "⤓ TST | "; 2 are the [] brackets
                 if space_left >= 100:  # Maximum sized bar
                     self.__multiplier = 1
