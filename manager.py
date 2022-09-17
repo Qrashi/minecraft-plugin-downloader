@@ -233,7 +233,6 @@ if __name__ != "__main__":
     print("This file is only meant to be executed from the console")
     sys.exit()
 else:
-    cli = CLIApp("INI")
     try:
         main()
     except KeyboardInterrupt:

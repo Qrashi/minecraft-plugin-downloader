@@ -143,7 +143,7 @@ def print_pretty(color: str, symbol: str, message: str, vanish: bool, enable_len
 
 def update_sender(new_sender: str):
     """
-    Update the sender (first three letters) of the CLIApp
+    Update the sender (first three letters) of the cli
     :param new_sender:
     :return:
     """
