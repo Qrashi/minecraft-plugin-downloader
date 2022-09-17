@@ -294,10 +294,10 @@ def progress_bar(message, progress: int = 0, vanish: bool = False):
             space_left = min(terminal_size - 8 - len(
                 self.__message) + 2, max_progress_size)  # 8 is the length of "⤓ TST | "; 2 are the [] brackets
             if space_left >= 100:  # Maximum sized bar
-                __multiplier = 1
+                self.__multiplier = 1
                 return
-            __multiplier = round(floor(space_left * 0.1) * 0.1,
-                                 1)  # Round to the lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
+            self.__multiplier = round(floor(space_left * 0.1) * 0.1, 1)
+            # Round to the lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
 
         def update_message(self, updated_message: str, done: int = __progress):
             """
@@ -306,7 +306,7 @@ def progress_bar(message, progress: int = 0, vanish: bool = False):
             :param done: progress (%), 0 - 100
             :return:
             """
-            __message = updated_message
+            self.__message = updated_message
             self.__progress = done
             self.calculate_multiplier()
             self.show()
