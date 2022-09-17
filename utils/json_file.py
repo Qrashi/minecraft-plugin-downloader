@@ -11,6 +11,7 @@ class JsonFile:
     """
     A json file on the disk
     """
+
     def __init__(self, filename: str, default: Union[str, Dict, List, int, float, bool] = "{}"):
         """
         Initialize a new JsonFile
@@ -20,9 +21,9 @@ class JsonFile:
         self.__filename = abs_filename(filename)
         if type(default) is not str:
             default = json.dumps(default, indent=4, sort_keys=True)
-        json_file = load(self.__filename, default=default)
-        self.json: Union[dict, list] = json.load(json_file)
-        json_file.close()
+        with load(self.__filename, default=default) as json_file:
+            self.json: Union[dict, list] = json.load(json_file)
+            json_file.close()
 
     def reload(self):
         """

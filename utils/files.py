@@ -18,6 +18,7 @@ class FilePool:
     """
     A FilePool, a collection of files
     """
+
     def __init__(self):
         """
         Initialize the FilePool

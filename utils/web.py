@@ -40,5 +40,3 @@ class FaultyStatusCodeException(Exception):
     """
     An error describing some error in the GET process
     """
-
-    pass

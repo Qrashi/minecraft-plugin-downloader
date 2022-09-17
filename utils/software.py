@@ -20,6 +20,7 @@ class Software:
     """
     Software to use in servers (can also be configuration), in genereal a managed file
     """
+
     def __init__(self, software):
         """
         Initialize the software and load parameters

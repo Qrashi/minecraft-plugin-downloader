@@ -98,6 +98,7 @@ class CLIApp:
     """
     CLIApp, a utility class to make outputting pretty stuff easy.
     """
+
     def __init__(self, sender: str):
         """
         Initialize a new CLIApp
@@ -256,6 +257,7 @@ class CLIApp:
             """
             A ProgressBar utility class
             """
+
             def __init__(self, print_function):
                 """
                 Initialize the ProgressBar
@@ -328,7 +330,7 @@ class CLIApp:
 
     def wait_until_event(self, message: str, end_message: str, vanish: bool = False, green: bool = False) -> Callable:
         """
-        Have a waiting indicator until a stop function is called (end = wait_until_event(...); do stuff; end())
+        Show a waiting indicator until the returned stop function is called.
         :param message: Message to display
         :param end_message: Message to display at the end of the waiting
         :param vanish: Weather or not the message should vanish

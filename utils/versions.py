@@ -29,6 +29,12 @@ def is_valid(version: str, report_errors=False, terminate=False) -> bool:
     :return: Weather or not string is a valid version
     """
     def error(reason, will_continue):
+        """
+        Report an error if version is invalid
+        :param reason: reason for error
+        :param will_continue: weather or not program will continue
+        :return:
+        """
         if report_errors:
             if will_continue:
                 report(9, "Version integrity checker", reason, additional="Program will continue despite error")
@@ -104,6 +110,7 @@ class Version:
     """
     A minecraft version
     """
+
     def __init__(self, version: Union[str, Tuple[Union[int, str], Union[int, str]], Dict[str, int]]):
         """
         Initialize a new version object
@@ -203,6 +210,7 @@ class VersionRangeRequirement:
     """
     A Version requirement
     """
+
     def __init__(self, requirement: Union[Tuple[Version, Version], Dict[str, str], Dict[str, Dict[str, int]]]):
         """
         Initialize a new Version requirement

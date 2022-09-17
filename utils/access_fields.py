@@ -14,6 +14,7 @@ class FileAccessField:
     """
     A FileAccessField, a way to update and access data of a json file
     """
+
     def __init__(self, field: Union[Dict[str, Union[str, List[str]]], str]):
         """
         Initialize a FileAccessField
@@ -94,6 +95,7 @@ class WebAccessField:
     """
     WebAccessField, a component that can easily retrieve information from the internet
     """
+
     tasks: List[Dict[str, Union[str, List[Union[str, int]]]]]
 
     def __init__(self, field: Union[Dict, List, str]):
@@ -153,7 +155,7 @@ class WebAccessField:
                 if isinstance(result, Exception):
                     return result
                 return uri_access(task["path"], result)
-            elif task["type"] == "get_store":
+            if task["type"] == "get_store":
                 if not all(x in list(task) for x in ["url", "path", "destination"]):
                     report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
                            "malformed get_store task. \"url\", \"path\" or \"destination\" is missing",
@@ -169,7 +171,7 @@ class WebAccessField:
                 if isinstance(result, Exception):
                     return result
                 self.replaceable[f"%{destination}%"] = uri_access(task["path"], result)
-            elif task["type"] == "set_headers":
+            if task["type"] == "set_headers":
                 if "headers" in task:
                     headers = task["headers"]
                 else:
@@ -178,7 +180,7 @@ class WebAccessField:
                            additional=f"task data: {task}",
                            software=context.name)
                     return WebAccessFieldError("task \"set_headers\" malformed, missing \"headers\"")
-            elif task["type"] == "return":
+            if task["type"] == "return":
                 if "value" in task:
                     return self.replace(task["value"])
                 report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
@@ -198,5 +200,3 @@ class WebAccessFieldError(Exception):
     """
     An error which occurred while doing something with a WebAccessField
     """
-
-    pass
