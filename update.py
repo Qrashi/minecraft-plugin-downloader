@@ -100,7 +100,7 @@ def main(check_all: bool, re_download: str):
     software_objects = {}
     for software in all_software:
         checked = checked + 1
-        progress.update_message("Checking " + software + "...")
+        progress.update_message("Checking " + software + "...", done=(checked / total_software) * 100)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
@@ -123,7 +123,7 @@ def main(check_all: bool, re_download: str):
         context.failure_severity = 10
         context.task = "getting information"
         prog = (servers_iter / servers_total) * 100
-        progress.update_message("Updating " + server_name)
+        progress.update_message("Updating " + server_name, prog)
         sleep(0.05)
         changed = False
         # Get the server version
@@ -152,7 +152,8 @@ def main(check_all: bool, re_download: str):
                             server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
                         failing = 0
-                        progress.update_message("Checking " + server_name + " version compatibility for " + version.string())
+                        progress.update_message(
+                            "Checking " + server_name + " version compatibility for " + version.string())
                         dep_iter = 0
                         dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
@@ -213,12 +214,18 @@ def main(check_all: bool, re_download: str):
                                 context.task = "updating server to " + version.string()
                                 for task in server_info["auto_update"]["on_update"]:
                                     if enabled(task):
-                                        progress.update_message(task["progress"]["message"], done=task["progress"]["value"])
-                                        if not execute(task, server_info["path"], {"%old_version%": server_version.string(), "%new_version%": version.string()}):
+                                        progress.update_message(task["progress"]["message"],
+                                                                done=task["progress"]["value"])
+                                        if not execute(task, server_info["path"],
+                                                       {"%old_version%": server_version.string(),
+                                                        "%new_version%": version.string()}):
                                             # Error while executing task
                                             update = False
-                                            progress.fail("Could not update " + server_name + " to " + version.string() + ". See errors.json")
-                                            report(8, "update of " + server_name, "could not execute all update tasks. some things may need to be cleaned up.", additional="script doesn't clean up automatically.")
+                                            progress.fail(
+                                                "Could not update " + server_name + " to " + version.string() + ". See errors.json")
+                                            report(8, "update of " + server_name,
+                                                   "could not execute all update tasks. some things may need to be cleaned up.",
+                                                   additional="script doesn't clean up automatically.")
                                             break
                             if update:
                                 server_version = version
@@ -228,7 +235,8 @@ def main(check_all: bool, re_download: str):
                                 sleep(0.2)
 
                         else:
-                            progress.fail(server_name + " not compatible with " + version.string() + "(" + str(failing) + " non-compatible)")
+                            progress.fail(server_name + " not compatible with " + version.string() + "(" + str(
+                                failing) + " non-compatible)")
 
                 else:  # Version up to date
                     server_info["auto_update"]["blocking"] = {}
@@ -238,7 +246,7 @@ def main(check_all: bool, re_download: str):
         context.task = "updating dependencies"
         dependencies_total = len(server_info["software"])
         dep_iter = 0
-        progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]")
+        progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]", done=prog)
         for dependency, info in server_info["software"].items():
             sleep(0.01)
             dep_iter = dep_iter + 1
@@ -254,7 +262,8 @@ def main(check_all: bool, re_download: str):
             context.task = "updating " + dependency
             if not server_info["software"][dependency]["enabled"]:
                 continue
-            if software.needs_update(server_info["path"] + info["copy_path"]) and server_version.fulfills(software.requirements):
+            if software.needs_update(server_info["path"] + info["copy_path"]) and server_version.fulfills(
+                    software.requirements):
                 # Skip update if no update happened
                 # Software IS compatible, copy is allowed > copy
                 software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
@@ -287,7 +296,8 @@ if __name__ == "__main__":
         sys.exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
-            report(context.failure_severity, "updater - main", f"Updater quit unexpectedly! {context.name} - {context.task}",
+            report(context.failure_severity, "updater - main",
+                   f"Updater quit unexpectedly! {context.name} - {context.task}",
                    additional="Traceback: " + ''.join(traceback.format_exception(None, e, e.__traceback__)),
                    exception=e)
             cli.fail("ERROR: Uncaught exception: ")
