@@ -22,7 +22,7 @@ def main(silent: bool):
     :return:
     """
     cli.update_sender("ARM")
-    cli.load("Accessing archive database & current errors", vanish=True)
+    cli.loading("Accessing archive database & current errors", vanish=True)
     errors_file, events_file = JSONFile("data/errors.json", default="[]"), JSONFile("data/events.json")
     archive_info = JSONFile("data/archive/archive.json",
                             default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",

@@ -222,7 +222,7 @@ def say(message: str, vanish: bool = False):
     print_pretty("", "#", message, vanish)
 
 
-def load(message: str, vanish: bool = False):
+def loading(message: str, vanish: bool = False):
     """
     Tell the user something is loading
     :param message: Message to user

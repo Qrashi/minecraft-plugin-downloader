@@ -7,6 +7,7 @@ from os import makedirs, path
 
 from typing import Union, Dict, Tuple
 
+from singlejson import load, sync
 import utils.cli as cli
 from utils.access_fields import WebAccessField
 from utils.context_manager import context
@@ -14,10 +15,9 @@ from utils.dict_utils import enabled
 from utils.errors import report
 from utils.events import report as report_event
 from utils.file_defaults import CONFIG
-from singlejson import pool
 from utils.static_info import DAYS_SINCE_EPOCH
 
-versions = pool.open("data/versions.json").json["versions"]
+versions = load("data/versions.json").json["versions"]
 
 
 def is_valid(version: str, report_errors=False, terminate=False) -> bool:
@@ -268,33 +268,33 @@ def check_game_versions():
     Check for new game versions
     :return:
     """
-    if pool.open("data/versions.json").json["last_check"] == 0:
+    if load("data/versions.json").json["last_check"] == 0:
         # Create "software" folder
-        makedirs(path.abspath(pool.open("data/config.json", default=CONFIG).json["sources_folder"]), exist_ok=True)
-    if pool.open("data/versions.json").json["last_check"] == 0 or enabled(
-            pool.open("data/config.json", default=CONFIG).json["newest_game_version"]):
+        makedirs(path.abspath(load("data/config.json", default=CONFIG).json["sources_folder"]), exist_ok=True)
+    if load("data/versions.json").json["last_check"] == 0 or enabled(
+            load("data/config.json", default=CONFIG).json["newest_game_version"]):
         # If there has not been a last check (initialisation) will always check versions.
-        if (DAYS_SINCE_EPOCH - pool.open("data/versions.json").json["last_check"]) > \
-                pool.open("data/config.json", default=CONFIG).json["version_check_interval"]:
-            current_version = Version(pool.open("data/versions.json").json["current_version"])
+        if (DAYS_SINCE_EPOCH - load("data/versions.json").json["last_check"]) > \
+                load("data/config.json", default=CONFIG).json["version_check_interval"]:
+            current_version = Version(load("data/versions.json").json["current_version"])
             # The version might not exist in the versions database because the database is nonexistent!
             context.name = "main"
             context.task = "fetching newest game versions"
             context.failure_severity = 3
 
-            cli.load("Checking for new version...", vanish=True)
+            cli.loading("Checking for new version...", vanish=True)
             versions_online = WebAccessField(
-                pool.open("data/config.json", default=CONFIG).json["newest_game_version"]).execute({})
+                load("data/config.json", default=CONFIG).json["newest_game_version"]).execute({})
             if isinstance(versions_online, Exception):
                 cli.fail(f"Could not retrieve newest game version online ({versions_online})")
-                if pool.open("data/versions.json").json["last_check"]:
+                if load("data/versions.json").json["last_check"]:
                     cli.fail("Error while retrieving data for first time setup, cannot continue!")
                     cli.fail(
                         "This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
                     print(versions_online)
                     sys.exit()
 
-            versions_json = pool.open("data/versions.json").json
+            versions_json = load("data/versions.json").json
             if type(versions_online) is list:
                 highest = Version("1.0")
                 for version in versions_online:
@@ -308,18 +308,18 @@ def check_game_versions():
                 versions_json["versions"].append(highest.string())
 
             if current_version.matches(highest):
-                pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
+                load("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
             else:
-                pool.open("data/versions.json").json["current_version"] = highest.string()
-                if pool.open("data/versions.json").json["last_check"] == 0:
-                    pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
+                load("data/versions.json").json["current_version"] = highest.string()
+                if load("data/versions.json").json["last_check"] == 0:
+                    load("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
                     report_event("Initialisation",
                                  "Initialisation complete, the current minecraft version was set to " + highest.string())
                     # On first initialisation. the version is 1.0 so rather give an "initialisation complete" event
                     cli.success("Initialisation complete!")
-                    pool.sync()
+                    sync()
                     sys.exit()
                 else:
-                    pool.open("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
+                    load("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
                     report_event("Game version checker", "The game version was updated to " + highest.string())
                     cli.success("Fetched new minecraft version(s): " + highest.string())

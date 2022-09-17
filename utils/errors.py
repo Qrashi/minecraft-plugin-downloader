@@ -35,8 +35,8 @@ def report(severity: int, sender: str, reason: str, additional: str = "",
 
     if software is not None:
         try:
-            from singlejson import pool
-            all_sources = pool.open("data/sources.json", default="{}").json
+            from singlejson import load
+            all_sources = load("data/sources.json", default="{}").json
             if software in all_sources:
                 errors.json.append({"severity": severity, "reason": reason, "from": sender, "software": software,
                                     "last_successful_software_check": all_sources[software]["last_check"],

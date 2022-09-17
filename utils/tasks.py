@@ -7,7 +7,7 @@ from typing import Dict
 import utils.cli as cli
 from utils.context_manager import context
 from .errors import report
-from singlejson import pool
+from singlejson import load
 from shutil import copy
 
 
@@ -47,7 +47,7 @@ def execute(task: dict, directory: str, replaceable: Dict[str, str], final_dest:
         return True
     if task_type == "write":
         # Write data to file
-        file = pool.open(task["value"])
+        file = load(task["value"])
         for change in task["value"]["changes"][:-1]:
             current = file.json
             for access in change["path"]:

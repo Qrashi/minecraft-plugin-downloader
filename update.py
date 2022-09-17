@@ -4,13 +4,13 @@ import traceback
 from subprocess import run, PIPE
 from time import sleep
 
+from singlejson import load, sync
 from utils.static_info import DAYS_SINCE_EPOCH
 from utils.argparser import args
 import utils.cli as cli
 from utils.access_fields import FileAccessField
 from utils.errors import report
 from utils.events import report as report_event
-from singlejson import pool
 from utils.software import Software
 from utils.versions import Version, check_game_versions
 from utils.dict_utils import enabled
@@ -32,15 +32,15 @@ def main(check_all: bool, re_download: str):
     if check_all:
         cli.info("Checking compatibility for every software!")
     cli.update_sender("INI")
-    cli.load("Starting update, loading data...", vanish=True)
+    cli.loading("Starting update, loading data...", vanish=True)
 
     check_game_versions()
-    current_game_version = Version(pool.open("data/versions.json").json["current_version"])
+    current_game_version = Version(load("data/versions.json").json["current_version"])
 
-    software_file = pool.open("data/software.json", default="{}")
-    servers = pool.open("data/servers.json", default="{}")
+    software_file = load("data/software.json", default="{}")
+    servers = load("data/servers.json", default="{}")
     all_software = software_file.json
-    config = pool.open("data/config.json", default=CONFIG).json
+    config = load("data/config.json", default=CONFIG).json
 
     context.task = "updating configurations"
     if "config_version" not in config and config["config_version"] < 1:
@@ -66,7 +66,7 @@ def main(check_all: bool, re_download: str):
         else:
             if not code.stdout.decode('utf-8').endswith(" "):
                 # Update found
-                cli.load("Downloading updates [2/2]", vanish=True)
+                cli.loading("Downloading updates [2/2]", vanish=True)
             code = run("git pull", stdout=PIPE, stderr=PIPE, shell=True)
             if code.returncode != 0:
                 cli.fail("Could not pull updates from git - code " + str(code.returncode))
@@ -275,7 +275,7 @@ def main(check_all: bool, re_download: str):
     else:
         cli.success("Everything up to date!")
 
-    pool.sync()
+    sync()
     cli.success("Update sequence complete")
 
 

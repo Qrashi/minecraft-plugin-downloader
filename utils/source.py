@@ -16,12 +16,12 @@ from .dict_utils import enabled
 from .errors import report
 from .events import report as report_event
 from .file_defaults import CONFIG
-from singlejson import pool
+from singlejson import load
 from .io import abs_filename
 from .tasks import execute
 from .versions import Version, VersionRangeRequirement
 
-SOURCES_DIR = pool.open("data/config.json", default=CONFIG).json["sources_folder"]
+SOURCES_DIR = load("data/config.json", default=CONFIG).json["sources_folder"]
 
 
 class Source:
@@ -34,7 +34,7 @@ class Source:
         Initialize source
         :param software: name of relevant software
         """
-        sources = pool.open("data/sources.json", default="{}").json
+        sources = load("data/sources.json", default="{}").json
         if software not in sources:
             report(9, "source class", "Typo in config: Could not find specified source, terminating!",
                    additional="Provided source: " + software)
@@ -45,12 +45,12 @@ class Source:
         self.server = source_info["server"]
         self.last_check = source_info["last_checked"]
         self.config: dict = source_info
-        all_software = pool.open("data/software.json", default="{}").json
+        all_software = load("data/software.json", default="{}").json
 
         if "headers" in self.config:
             self.headers = self.config["headers"]
         else:
-            self.headers = pool.open("data/config.json", default=CONFIG).json["default_headers"]
+            self.headers = load("data/config.json", default=CONFIG).json["default_headers"]
 
         self.severity = all_software[software]["severity"]
         self.file = all_software[software]["file"]
@@ -87,7 +87,7 @@ class Source:
             cli.fail("Could not retrieve newest compatibility: " + str(new_compatibility))
             return None
 
-        all_software = pool.open("data/software.json", default="{}").json
+        all_software = load("data/software.json", default="{}").json
         previous_compatibility = VersionRangeRequirement(all_software[self.name]["requirements"])
 
         if type(new_compatibility) is str:
@@ -169,7 +169,7 @@ class Source:
             # Return same build, don't do anything
 
         if type(buildID) is str or type(buildID) is int:
-            pool.open("data/sources.json", default="{}").json[self.name]["last_checked"] = datetime.datetime.now().strftime(
+            load("data/sources.json", default="{}").json[self.name]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
             # Single newest build
             return buildID
@@ -182,7 +182,7 @@ class Source:
                 report(self.severity, "download - " + self.name, f"List of builds is EMPTY ({buildID})",
                        software=self.name)
             if len(buildID) == 1:
-                pool.open("data/sources.json", default="{}").json[self.name]["last_checked"] = datetime.datetime.now().strftime(
+                load("data/sources.json", default="{}").json[self.name]["last_checked"] = datetime.datetime.now().strftime(
                     "%m.%d %H:%M")
                 return int(buildID[0])
             builds = []
@@ -196,7 +196,7 @@ class Source:
                                software=self.name)
                         continue
                 builds.append(build)
-            pool.open("data/sources.json", default="{}").json[self.name]["last_checked"] = datetime.datetime.now().strftime(
+            load("data/sources.json", default="{}").json[self.name]["last_checked"] = datetime.datetime.now().strftime(
                 "%m.%d %H:%M")
             return max(builds)
         # Unknown version type
@@ -245,7 +245,7 @@ class Source:
                 try:
                     dl = 0
                     total_length = int(total_length)
-                    for data in response.iter_content(chunk_size=pool.open("data/config.json", default=CONFIG).json["batch_size"]):
+                    for data in response.iter_content(chunk_size=load("data/config.json", default=CONFIG).json["batch_size"]):
                         dl = dl + len(data)  # Should be 1024
                         temporary_file.write(data)
                         done = 100 - int(((total_length - dl) / total_length) * 100)  # 100 - (remaining / total)*100

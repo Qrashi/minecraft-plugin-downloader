@@ -6,7 +6,7 @@ from typing import Union, Dict, List
 from utils.errors import report
 from utils.context_manager import context
 from utils.file_defaults import CONFIG
-from singlejson import pool
+from singlejson import load
 from utils.web import get_managed
 
 
@@ -32,7 +32,7 @@ class FileAccessField:
         Accesses the desired field.
         :return: The accessed field
         """
-        json = pool.open(self.file).json
+        json = load(self.file).json
         if len(self.path) == 0:
             return json
         data = json
@@ -53,7 +53,7 @@ class FileAccessField:
         :param new_value: Data to update with
         :return:
         """
-        json = pool.open(self.file).json
+        json = load(self.file).json
         if len(self.path) == 0:
             json = new_value
         data = json
@@ -129,7 +129,7 @@ class WebAccessField:
             result = result.replace(this, str(that))
         return result
 
-    def execute(self, replaceable: Dict[str, str], requres_return: bool = True, headers: Dict = pool.open("data/config.json", default=CONFIG).json["default_headers"]) -> Union[int, str, List, Dict, bool, None, Exception]:
+    def execute(self, replaceable: Dict[str, str], requres_return: bool = True, headers: Dict = load("data/config.json", default=CONFIG).json["default_headers"]) -> Union[int, str, List, Dict, bool, None, Exception]:
         """
         Execute the WebAccessField, get the desired value
         :param replaceable: Standard replaceable values

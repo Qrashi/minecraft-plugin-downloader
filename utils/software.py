@@ -7,7 +7,7 @@ from utils.file_defaults import CONFIG
 import utils.cli as cli
 from .dict_utils import enabled
 from .errors import report
-from singlejson import pool
+from singlejson import load
 from .io import generate
 from .sha244 import get_hash
 from .source import Source
@@ -26,7 +26,7 @@ class Software:
         Initialize the software and load parameters
         :param software: Software to load (name of software)
         """
-        software_json = pool.open("data/software.json", default="{}").json
+        software_json = load("data/software.json", default="{}").json
         if software not in software_json:
             report(9, "software class", "Typo in config: Could not find specified software, exiting!",
                    additional="Provided software: " + software)
@@ -39,14 +39,14 @@ class Software:
         self.severity = software_json[software]["severity"]
         self.requirements = VersionRangeRequirement(software_json[software]["requirements"])
         self.hash = software_json[software]["hash"]
-        self.file = pool.open("data/config.json", default=CONFIG).json["sources_folder"] + "/" + software_json[software]["file"]
+        self.file = load("data/config.json", default=CONFIG).json["sources_folder"] + "/" + software_json[software]["file"]
 
     def has_source(self) -> bool:
         """
         Check if software has source (way to retrieve the newest builds)
         :return: boolean (has or does not have)
         """
-        sources = pool.open("data/sources.json", default="{}").json
+        sources = load("data/sources.json", default="{}").json
         if self.name in sources:
             return enabled(sources[self.name])
         return False
@@ -96,7 +96,7 @@ class Software:
         context.failure_severity = self.severity
         context.name = self.name
         context.task = f"copying to server \"{server}\""
-        servers = pool.open("data/servers.json", default="{}").json
+        servers = load("data/servers.json", default="{}").json
         server_info = servers[server]
         destination_path = server_info["path"] + server_info["software"][self.name]["copy_path"]
         progress = cli.progress_bar(f"Updating {self.name} in {server} {dependency_number}", vanish=True)
@@ -118,7 +118,7 @@ class Software:
                 copied = 0  # Copied bytes
                 total = stat(self.file).st_size
                 while True:
-                    piece = source.read(pool.open("data/config.json", default=CONFIG).json["batch_size"])
+                    piece = source.read(load("data/config.json", default=CONFIG).json["batch_size"])
                     if not piece:
                         break  # End of file
                     copied += len(piece)

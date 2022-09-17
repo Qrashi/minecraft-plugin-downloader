@@ -1,9 +1,9 @@
 import os
 import sys
 
-from utils.cli import CLIApp
+import utils.cli as cli
 from utils.file_defaults import CONFIG
-from singlejson import pool
+from singlejson import load, sync
 from utils.sha244 import get_hash
 from utils.versions import is_valid, Version, VersionRangeRequirement
 from utils.context_manager import context
@@ -19,7 +19,7 @@ def main():
     context.name = "manager"
     cli.say("Starting, scanning software directory...")
 
-    all_software = pool.open("data/software.json", default="{}").json
+    all_software = load("data/software.json", default="{}").json
 
     software_file_list = []
     for software in all_software.values():
@@ -27,7 +27,7 @@ def main():
 
     detected_files = {}
     files = []
-    with os.scandir(pool.open("data/config.json", default=CONFIG).json["sources_folder"]) as directory:
+    with os.scandir(load("data/config.json", default=CONFIG).json["sources_folder"]) as directory:
         for file in directory:
             if not file.name.endswith(".tmp"):
                 files.append(file.name)
@@ -77,8 +77,8 @@ def remove(file: str):
     :param file: file to remove
     :return:
     """
-    software_file = pool.open("data/software.json", default="{}")
-    sources_file = pool.open("data/sources.json", default="{}")
+    software_file = load("data/software.json", default="{}")
+    sources_file = load("data/sources.json", default="{}")
     all_software = software_file.json
 
     cli.update_sender("RM")
@@ -111,7 +111,7 @@ def remove(file: str):
         cli.fail("Aborting")
         sys.exit()
 
-    servers_file = pool.open("data/servers.json", default="{}")
+    servers_file = load("data/servers.json", default="{}")
 
     if rm_files:
         servers_rm = []
@@ -133,7 +133,7 @@ def remove(file: str):
     software_file.json = all_software
 
     cli.info("Software configurations removed!")
-    pool.sync()
+    sync()
 
 
 def add(file: str):
@@ -142,7 +142,7 @@ def add(file: str):
     :param file: file to add
     :return:
     """
-    software_file = pool.open("data/software.json", default="{}")
+    software_file = load("data/software.json", default="{}")
     all_software = software_file.json
 
     cli.update_sender("ADD")
@@ -225,7 +225,7 @@ def add(file: str):
     }
 
     software_file.json = all_software
-    pool.sync()
+    sync()
     cli.info("If you would like to add auto-update, please read \"examples.md\"!")
 
 
