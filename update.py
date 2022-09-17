@@ -6,11 +6,11 @@ from time import sleep
 
 from utils.static_info import DAYS_SINCE_EPOCH
 from utils.argparser import args
-from utils.cli_provider import cli
+import utils.cli as cli
 from utils.access_fields import FileAccessField
 from utils.errors import report
 from utils.events import report as report_event
-from utils.files import pool
+from singlejson import pool
 from utils.software import Software
 from utils.versions import Version, check_game_versions
 from utils.dict_utils import enabled

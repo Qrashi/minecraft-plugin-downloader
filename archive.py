@@ -2,8 +2,8 @@ import argparse
 import datetime
 import sys
 
-from utils.cli_provider import cli
-from utils.json_file import JsonFile
+import utils.cli as cli
+from singlejson import JSONFile
 
 
 def get_time(timestamp: int) -> str:
@@ -23,8 +23,8 @@ def main(silent: bool):
     """
     cli.update_sender("ARM")
     cli.load("Accessing archive database & current errors", vanish=True)
-    errors_file, events_file = JsonFile("data/errors.json", default="[]"), JsonFile("data/events.json")
-    archive_info = JsonFile("data/archive/archive.json",
+    errors_file, events_file = JSONFile("data/errors.json", default="[]"), JSONFile("data/events.json")
+    archive_info = JSONFile("data/archive/archive.json",
                             default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
                                                                                                                   "\""))
     last = archive_info.json["last"]
@@ -64,10 +64,10 @@ def archive(start: int, end: int, silent: bool):
         if new_name != "":
             dir_name = new_name
 
-    archive_data, archived_errors, archived_events = JsonFile(f"data/archive/{dir_name}/data.json"), JsonFile(
-        f"data/archive/{dir_name}/errors.json"), JsonFile(f"data/archive/{dir_name}/events.json")
-    errors, events = JsonFile("data/errors.json", default="[]"), JsonFile("data/events.json", default="[]")
-    archives_info = JsonFile("data/archive/archive.json")
+    archive_data, archived_errors, archived_events = JSONFile(f"data/archive/{dir_name}/data.json"), JSONFile(
+        f"data/archive/{dir_name}/errors.json"), JSONFile(f"data/archive/{dir_name}/events.json")
+    errors, events = JSONFile("data/errors.json", default="[]"), JSONFile("data/events.json", default="[]")
+    archives_info = JSONFile("data/archive/archive.json")
     nr_errors, nr_events = len(errors.json), len(events.json)
     archive_data.json = {
         "timeframe": {
@@ -105,7 +105,7 @@ def recount():
     Recount errors / events in overall database
     :return:
     """
-    archive_info = JsonFile("data/archive/archive.json",
+    archive_info = JSONFile("data/archive/archive.json",
                             default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
                                                                                                                   "\""))
     if len(archive_info.json["archives"]) == 0:
@@ -118,8 +118,8 @@ def recount():
     for dir_name in archive_info.json["archives"]:
         progress.update_message(f"Counting {dir_name} ({archives_checked}/{archives})",
                                 done=(archives_checked / archives) * 100)
-        archive_data, archived_errors, archived_events = JsonFile(f"data/archive/{dir_name}/data.json"), JsonFile(
-            f"data/archive/{dir_name}/errors.json"), JsonFile(f"data/archive/{dir_name}/events.json")
+        archive_data, archived_errors, archived_events = JSONFile(f"data/archive/{dir_name}/data.json"), JSONFile(
+            f"data/archive/{dir_name}/errors.json"), JSONFile(f"data/archive/{dir_name}/events.json")
         nr_errors = len(archived_errors.json)
         nr_events = len(archived_events.json)
         archive_data.json["stats"]["errors"] = nr_errors

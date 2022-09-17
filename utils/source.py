@@ -9,14 +9,14 @@ from typing import Union, Dict
 
 from requests import get
 
-from .cli_provider import cli
+import utils.cli as cli
 from .access_fields import WebAccessField
 from .context_manager import context
 from .dict_utils import enabled
 from .errors import report
 from .events import report as report_event
 from .file_defaults import CONFIG
-from .files import pool
+from singlejson import pool
 from .io import abs_filename
 from .tasks import execute
 from .versions import Version, VersionRangeRequirement

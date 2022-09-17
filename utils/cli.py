@@ -9,7 +9,7 @@ from time import sleep
 from typing import Callable
 
 from .file_defaults import CONFIG
-from .json_file import JsonFile
+from singlejson import JSONFile
 
 # Try to install colorama
 try:
@@ -41,7 +41,7 @@ try:
 
     terminal_size = get_terminal_size().columns - 5
 except Exception as e:
-    config = JsonFile("data/config.json", default=CONFIG).json
+    config = JSONFile("data/config.json", default=CONFIG).json
     if "terminal_fallback_size" in config:
         terminal_size = config["terminal_fallback_size"]
     else:
@@ -64,7 +64,7 @@ if terminal_size < 20:
     sleep(2)
     terminal_size = 1000
 
-config = JsonFile("data/config.json", default=CONFIG)
+config = JSONFile("data/config.json", default=CONFIG)
 if "moon_mode" in config.json and config.json["moon_mode"]:
     loading_small = ["🌑", "🌒", "🌓", "🌔", "🌕", "🌖", "🌗", "🌘"]
 else:
@@ -94,283 +94,310 @@ def cut_string(to_split: str, maximum: int) -> str:
     return to_split[:maximum - 3] + "..."
 
 
-class CLIApp:
+class SenderHolder:
     """
-    CLIApp, a utility class to make outputting pretty stuff easy.
+    A class to hold the current sender
     """
 
-    def __init__(self, sender: str):
-        """
-        Initialize a new CLIApp
-        :param sender: Sender (three letters at the start of each message)
-        """
-        self.__sender = "ERR"
-        self.update_sender(sender)
+    __sender: str = " ERR |"
 
-    def print(self, color: str, symbol: str, message: str, vanish: bool, enable_len_check: bool = True):
+    def update(self, new_sender: str):
         """
-        Print a formatted string
-        :param color: Color of symbol
-        :param symbol: Symbol to print
-        :param message: Formatted message to print
-        :param vanish: weather to make the message vanish
-        :param enable_len_check: enable check if message fits line
+        Update the sender
+        :param new_sender: new sender
         :return:
         """
-        if vanish:
-            end = ""
-        else:
-            end = "\n"
-        # The length of the "! UPD | " is fixed at 8 characters.
-        if len(message) + 8 > terminal_size and enable_len_check:
-            # WON'T FIT IN ONE LINE
-            message = cut_string(message, terminal_size - 8)
-        print('\r\x1b[2K\r' + color + symbol + self.__sender + color + " " + message, end=end + Style.RESET_ALL)
-
-    def update_sender(self, sender: str):
-        """
-        Update the sender (first three letters) of the CLIApp
-        :param sender:
-        :return:
-        """
-        if len(sender) > 3:
-            insert = sender[:2]
-        elif len(sender) == 1:
-            insert = " " + sender + " "
-        elif len(sender) == 2:
-            insert = sender + " "
-        else:
-            insert = sender
-        self.__sender = Style.DIM + " " + insert + " " + Style.RESET_ALL + "|"
+        self.__sender = new_sender
 
     def get_sender(self) -> str:
         """
-        Get the sender (three letters)
-        :return: The sender
+        Get the current sender
+        :return: The current sender
         """
         return self.__sender
 
-    def ask(self, message: str, vanish: bool = False) -> str:
-        """
-        Ask some question to the user
-        :param message: Question to ask
-        :param vanish: Weather or not the message should vanish
-        :return: the answer as a string
-        """
-        self.print(Fore.MAGENTA, "?", message, True)
-        result = input("")
-        if vanish:
-            print('\x1b[1A\x1b[2K', end="")
-        return result
 
-    def info(self, message: str, vanish: bool = False):
+sender = SenderHolder()
+
+
+def print_pretty(color: str, symbol: str, message: str, vanish: bool, enable_len_check: bool = True):
+    """
+    Print a formatted string
+    :param color: Color of symbol
+    :param symbol: Symbol to print
+    :param message: Formatted message to print
+    :param vanish: weather to make the message vanish
+    :param enable_len_check: enable check if message fits line
+    :return:
+    """
+    if vanish:
+        end = ""
+    else:
+        end = "\n"
+    # The length of the "! UPD | " is fixed at 8 characters.
+    if len(message) + 8 > terminal_size and enable_len_check:
+        # WON'T FIT IN ONE LINE
+        message = cut_string(message, terminal_size - 8)
+    print('\r\x1b[2K\r' + color + symbol + sender.get_sender() + color + " " + message, end=end + Style.RESET_ALL)
+
+
+def update_sender(new_sender: str):
+    """
+    Update the sender (first three letters) of the CLIApp
+    :param new_sender:
+    :return:
+    """
+    if len(new_sender) > 3:
+        insert = new_sender[:2]
+    elif len(new_sender) == 1:
+        insert = " " + new_sender + " "
+    elif len(new_sender) == 2:
+        insert = new_sender + " "
+    else:
+        insert = new_sender
+    sender.update(Style.DIM + " " + insert + " " + Style.RESET_ALL + "|")
+
+
+def ask(message: str, vanish: bool = False) -> str:
+    """
+    Ask some question to the user
+    :param message: Question to ask
+    :param vanish: Weather or not the message should vanish
+    :return: the answer as a string
+    """
+    print_pretty(Fore.MAGENTA, "?", message, True)
+    result = input("")
+    if vanish:
+        print('\x1b[1A\x1b[2K', end="")
+    return result
+
+
+def info(message: str, vanish: bool = False):
+    """
+    Inform the user of something
+    :param message: Information to give to user
+    :param vanish: Weather or not the message should vanish
+    :return:
+    """
+    print_pretty(Fore.LIGHTBLUE_EX, "i", message, vanish)
+
+
+def warn(message: str, vanish: bool = False):
+    """
+    Warn the user of something
+    :param message: Warning to give to user
+    :param vanish: Weather or not the message should vanish
+    :return:
+    """
+    print_pretty(Fore.YELLOW, "!", message, vanish)
+
+
+def success(message: str, vanish: bool = False):
+    """
+    Indicate success of a task
+    :param message: Message sent to user
+    :param vanish: Weather or not the message should vanish
+    :return:
+    """
+    print_pretty(Fore.GREEN, "✔", message, vanish)
+
+
+def fail(message: str, vanish: bool = False):
+    """
+    Indicate failure of a task
+    :param message: Message sent to user
+    :param vanish: Weather or not the message should vanish
+    :return:
+    """
+    print_pretty(Fore.RED, "!", Fore.RED + message, vanish)
+
+
+def say(message: str, vanish: bool = False):
+    """
+    Tell the user something, neutral
+    :param message: message to display
+    :param vanish: Weather or not the message should vanish
+    :return:
+    """
+    print_pretty("", "#", message, vanish)
+
+
+def load(message: str, vanish: bool = False):
+    """
+    Tell the user something is loading
+    :param message: Message to user
+    :param vanish: Weather or not the message should vanish
+    :return:
+    """
+    print_pretty(Fore.BLUE, ">", message, vanish)
+
+
+def simple_wait_fixed_time(message: str, end_message: str, time: int, vanish: bool = False,
+                           green: bool = False):
+    """
+    Display a message for a fixed amount of time. Execution of your programm will be stopped while this is "ticking"
+    :param message: Message to display
+    :param end_message: Message to display at end of timeframe.
+    :param time: Time to display the message
+    :param vanish: Weather or not the message should vanish
+    :param green: Weather or not the loading bar should be green.
+    :return:
+    """
+    print_pretty(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
+    pos_small = 1
+    pos_big = 1
+    for _ in range(0, time * 4):
+        sleep(0.25)
+        pos_small = pos_small + 1
+        pos_big = pos_big + 0.5
+        print_pretty(Fore.LIGHTYELLOW_EX, loading_small[pos_small], loading_big[int(pos_big)] + " " + message, True)
+        if pos_small == len(loading_small) - 1:
+            pos_small = -1
+        if int(pos_big) == len(loading_big) - 1:
+            pos_big = -1
+    sleep(0.25)
+    if green:
+        print_pretty(Fore.GREEN, "✔", end_message, vanish)
+    else:
+        print_pretty(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
+
+
+def progress_bar(message, progress: int = 0, vanish: bool = False):
+    """
+    Return a progress bar object
+    :param message: Starting message to display
+    :param vanish: Weather or not the message should vanish
+    :return: A ProgressBar object
+    """
+
+    class ProgressBar:
         """
-        Inform the user of something
-        :param message: Information to give to user
-        :param vanish: Weather or not the message should vanish
+        A ProgressBar utility class
+        """
+
+        __message = message
+        __progress = progress
+        __multiplier = 0
+
+        def __init__(self):
+            """
+            Initialize the ProgressBar
+            """
+            self.calculate_multiplier()
+            self.update(progress)
+
+        def calculate_multiplier(self):
+            """
+            Calculate the multiplier (how many symbols the bar can fit)
+            :return:
+            """
+            space_left = min(terminal_size - 8 - len(
+                self.__message) + 2, max_progress_size)  # 8 is the length of "⤓ TST | "; 2 are the [] brackets
+            if space_left >= 100:  # Maximum sized bar
+                __multiplier = 1
+                return
+            __multiplier = round(floor(space_left * 0.1) * 0.1,
+                                 1)  # Round to the lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
+
+        def update_message(self, updated_message: str):
+            """
+            Update the message of the ProgressBar
+            :param updated_message: Updated message to display
+            :param done: progress (%), 0 - 100
+            :return:
+            """
+            __message = updated_message
+            self.calculate_multiplier()
+            self.show()
+
+        @staticmethod
+        def fail(fail_message: str, ):
+            """
+            End the ProgressBar with a failed execution indicator
+            :param fail_message: Message to display
+            :return:
+            """
+            print_pretty(Fore.RED, "!", fail_message, False)
+            # A failure will always stay in CLI
+
+        @staticmethod
+        def complete(complete_message: str, green: bool = False):
+            """
+            Complete a task
+            :param complete_message: Message to     display
+            :param green: Wetter to use green color coding
+            :return:
+            """
+            if green:
+                print_pretty(Fore.GREEN, "✔", complete_message, vanish)
+            else:
+                print_pretty(Fore.CYAN, "✔", complete_message, vanish)
+
+        def update(self, done: int):
+            """
+            Update the progress and show the progress bar
+            :param done: Progress (0 - 100)
+            :return:
+            """
+            self.__progress = done
+            self.show()
+
+        def show(self):
+            """
+            Show the ProgressBar
+            :return:
+            """
+            done_modified = int(self.__progress * self.__multiplier)
+            print_pretty(Fore.CYAN, "⤓", "[" + ('=' * done_modified) +
+                         (' ' * int(100 * self.__multiplier - done_modified)) + '] ' + self.__message,
+                         True, enable_len_check=False)
+
+    return ProgressBar()
+
+
+def wait_until_event(message: str, end_message: str, vanish: bool = False, green: bool = False) -> Callable:
+    """
+    Show a waiting indicator until the returned stop function is called.
+    :param message: Message to display
+    :param end_message: Message to display at the end of the waiting
+    :param vanish: Weather or not the message should vanish
+    :param green: Weather or not the message should use green color coding
+    :return: A function to terminate the waiting
+    """
+    from threading import Thread, Event
+    condition = Event()
+
+    def display_loading():
+        """
+        Display the loading animation and check for termination of waiting
         :return:
         """
-        self.print(Fore.LIGHTBLUE_EX, "i", message, vanish)
-
-    def warn(self, message: str, vanish: bool = False):
-        """
-        Warn the user of something
-        :param message: Warning to give to user
-        :param vanish: Weather or not the message should vanish
-        :return:
-        """
-        self.print(Fore.YELLOW, "!", message, vanish)
-
-    def success(self, message: str, vanish: bool = False):
-        """
-        Indicate success of a task
-        :param message: Message sent to user
-        :param vanish: Weather or not the message should vanish
-        :return:
-        """
-        self.print(Fore.GREEN, "✔", message, vanish)
-
-    def fail(self, message: str, vanish: bool = False):
-        """
-        Indicate failure of a task
-        :param message: Message sent to user
-        :param vanish: Weather or not the message should vanish
-        :return:
-        """
-        self.print(Fore.RED, "!", Fore.RED + message, vanish)
-
-    def say(self, message: str, vanish: bool = False):
-        """
-        Tell the user something, neutral
-        :param message: message to display
-        :param vanish: Weather or not the message should vanish
-        :return:
-        """
-        self.print("", "#", message, vanish)
-
-    def load(self, message: str, vanish: bool = False):
-        """
-        Tell the user something is loading
-        :param message: Message to user
-        :param vanish: Weather or not the message should vanish
-        :return:
-        """
-        self.print(Fore.BLUE, ">", message, vanish)
-
-    def simple_wait_fixed_time(self, message: str, end_message: str, time: int, vanish: bool = False,
-                               green: bool = False):
-        """
-        Display a message for a fixed amount of time. Execution of your programm will be stopped while this is "ticking"
-        :param message: Message to display
-        :param end_message: Message to display at end of timeframe.
-        :param time: Time to display the message
-        :param vanish: Weather or not the message should vanish
-        :param green: Weather or not the loading bar should be green.
-        :return:
-        """
-        self.print(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
-        pos_small = 1
-        pos_big = 1
-        for _ in range(0, time * 4):
-            sleep(0.25)
+        pos_small = 0
+        pos_big = 0
+        while not condition.is_set():
+            sleep(0.1)
             pos_small = pos_small + 1
             pos_big = pos_big + 0.5
-            self.print(Fore.LIGHTYELLOW_EX, loading_small[pos_small], loading_big[int(pos_big)] + " " + message, True)
+            print_pretty(Fore.LIGHTYELLOW_EX, loading_small[pos_small], loading_big[int(pos_big)] + " " + message,
+                         True)
             if pos_small == len(loading_small) - 1:
-                pos_small = -1
+                pos_small = 0
             if int(pos_big) == len(loading_big) - 1:
-                pos_big = -1
-        sleep(0.25)
+                pos_big = 0
         if green:
-            self.print(Fore.GREEN, "✔", end_message, vanish)
+            print_pretty(Fore.GREEN, "✔", end_message, vanish)
         else:
-            self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
+            print_pretty(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
 
-    def progress_bar(self, message, vanish: bool = False):
+    print_pretty(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
+    Thread(target=display_loading, args=()).start()
+
+    def end():
         """
-        Return a progress bar object
-        :param message: Starting message to display
-        :param vanish: Weather or not the message should vanish
-        :return: A ProgressBar object
+        End waiting for a condition
+        :return:
         """
-        class ProgressBar:
-            """
-            A ProgressBar utility class
-            """
+        condition.set()
+        sleep(0.01)
 
-            def __init__(self, print_function):
-                """
-                Initialize the ProgressBar
-                :param print_function: The function to use for printing stuff
-                """
-                self.__print_function = print_function
-                self.__message = message
-                self.__multiplier = 0
-                self.calculate_multiplier()
-                self.update(0)
-
-            def calculate_multiplier(self):
-                """
-                Calculate the multiplier (how many symbols the bar can fit)
-                :return:
-                """
-                space_left = min(terminal_size - 8 - len(
-                    self.__message) + 2, max_progress_size)  # 8 is the length of "⤓ TST | "; 2 are the [] brackets
-                if space_left >= 100:  # Maximum sized bar
-                    self.__multiplier = 1
-                    return
-                self.__multiplier = round(floor(space_left * 0.1) * 0.1,
-                                          1)  # Round to the lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
-
-            def update_message(self, updated_message: str, done: int = 0):
-                """
-                Update the message of the ProgressBar
-                :param updated_message: Updated message to display
-                :param done: progress (%), 0 - 100
-                :return:
-                """
-                self.__message = updated_message
-                self.calculate_multiplier()
-                self.update(done)
-
-            def fail(self, fail_message: str, ):
-                """
-                End the ProgressBar with a failed execution indicator
-                :param fail_message: Message to display
-                :return:
-                """
-                self.__print_function(Fore.RED, "!", fail_message, False)
-                # A failure will always stay in CLI
-
-            def complete(self, complete_message: str, green: bool = False):
-                """
-                Complete a task
-                :param complete_message: Message to     display
-                :param green: Wetter to use green color coding
-                :return:
-                """
-                if green:
-                    self.__print_function(Fore.GREEN, "✔", complete_message, vanish)
-                else:
-                    self.__print_function(Fore.CYAN, "✔", complete_message, vanish)
-
-            def update(self, done):
-                """
-                Update the progress
-                :param done: Progress (0 - 100)
-                :return:
-                """
-                done_modified = int(done * self.__multiplier)
-                self.__print_function(Fore.CYAN, "⤓", "[" + (
-                        '=' * done_modified) + (' ' * int(100 * self.__multiplier - done_modified)) + '] ' + self.__message,
-                                      True, enable_len_check=False)
-
-        return ProgressBar(self.print)
-    # TODO: Move to file, remove "object"
-
-    def wait_until_event(self, message: str, end_message: str, vanish: bool = False, green: bool = False) -> Callable:
-        """
-        Show a waiting indicator until the returned stop function is called.
-        :param message: Message to display
-        :param end_message: Message to display at the end of the waiting
-        :param vanish: Weather or not the message should vanish
-        :param green: Weather or not the message should use green color coding
-        :return: A function to terminate the waiting
-        """
-        from threading import Thread, Event
-        condition = Event()
-
-        def display_loading():
-            """
-            Display the loading animation and check for termination of waiting
-            :return:
-            """
-            pos_small = 0
-            pos_big = 0
-            while not condition.is_set():
-                sleep(0.1)
-                pos_small = pos_small + 1
-                pos_big = pos_big + 0.5
-                self.print(Fore.LIGHTYELLOW_EX, loading_small[pos_small], loading_big[int(pos_big)] + " " + message,
-                           True)
-                if pos_small == len(loading_small) - 1:
-                    pos_small = 0
-                if int(pos_big) == len(loading_big) - 1:
-                    pos_big = 0
-            if green:
-                self.print(Fore.GREEN, "✔", end_message, vanish)
-            else:
-                self.print(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
-
-        self.print(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
-        Thread(target=display_loading, args=()).start()
-
-        def end():
-            """
-            End waiting for a condition
-            :return:
-            """
-            condition.set()
-            sleep(0.01)
-
-        return end
+    return end

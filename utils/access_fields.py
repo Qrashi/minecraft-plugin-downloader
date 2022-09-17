@@ -6,7 +6,7 @@ from typing import Union, Dict, List
 from utils.errors import report
 from utils.context_manager import context
 from utils.file_defaults import CONFIG
-from utils.files import pool
+from singlejson import pool
 from utils.web import get_managed
 
 

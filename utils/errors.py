@@ -6,7 +6,7 @@ from json import dumps
 from typing import Union
 
 from .static_info import VERSION, COMMIT
-from .json_file import JsonFile
+from singlejson import JSONFile
 
 
 def report(severity: int, sender: str, reason: str, additional: str = "",
@@ -21,7 +21,7 @@ def report(severity: int, sender: str, reason: str, additional: str = "",
     :param software: software where error was caused
     :return:
     """
-    errors = JsonFile("data/errors.json", default="[]")
+    errors = JSONFile("data/errors.json", default="[]")
 
     time = datetime.now().strftime("%d.%m %H:%M:%S")
     stamp = datetime.now().timestamp()
@@ -35,7 +35,7 @@ def report(severity: int, sender: str, reason: str, additional: str = "",
 
     if software is not None:
         try:
-            from utils.files import pool
+            from singlejson import pool
             all_sources = pool.open("data/sources.json", default="{}").json
             if software in all_sources:
                 errors.json.append({"severity": severity, "reason": reason, "from": sender, "software": software,

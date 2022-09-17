@@ -30,24 +30,3 @@ def generate(file: str, default: str = "{}") -> bool:
     file.write(default)
     file.close()
     return False
-
-
-def check(file: str) -> bool:
-    """
-    Check if a file exists
-    :param file: file to check
-    :return: weather or not the file exists
-    """
-    return path.exists(file)
-
-
-def load(file: str, mode: str = "r", default: str = "{}") -> TextIO:
-    """
-    Open a file using python
-    :param file: file to open
-    :param mode: mode to open file with
-    :param default: default to write to file (if nonexistent or too small)
-    :return: a writeable python file
-    """
-    generate(file, default)
-    return open(file, mode)

@@ -4,10 +4,10 @@ Software management tools
 from os import stat
 
 from utils.file_defaults import CONFIG
-from .cli_provider import cli
+import utils.cli as cli
 from .dict_utils import enabled
 from .errors import report
-from .files import pool
+from singlejson import pool
 from .io import generate
 from .sha244 import get_hash
 from .source import Source

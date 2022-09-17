@@ -257,7 +257,7 @@ N               enabled: wether task is enabled
                 type: Type of task; Types of tasks e.g "run"
                     * run: Run a console command in the tmp directory (os.system)
                     * end: Specify what to do at the end of all tasks (optional)
-                    * write: Write stuff to a jsonFile
+                    * write: Write stuff to a JSONFile
                 
                 value: Options for the tasks:
 A                   * if type is run: requires what to run example: "run": "java -jar xy.jar"

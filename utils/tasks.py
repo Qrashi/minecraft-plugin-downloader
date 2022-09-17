@@ -4,10 +4,10 @@ Task executor for server update and dependency update tasks
 from subprocess import run, PIPE
 from typing import Dict
 
-from .cli_provider import cli
+import utils.cli as cli
 from utils.context_manager import context
 from .errors import report
-from .files import pool
+from singlejson import pool
 from shutil import copy
 
 

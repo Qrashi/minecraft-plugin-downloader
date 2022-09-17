@@ -7,14 +7,14 @@ from os import makedirs, path
 
 from typing import Union, Dict, Tuple
 
-from utils.cli_provider import cli
+import utils.cli as cli
 from utils.access_fields import WebAccessField
 from utils.context_manager import context
 from utils.dict_utils import enabled
 from utils.errors import report
 from utils.events import report as report_event
 from utils.file_defaults import CONFIG
-from utils.files import pool
+from singlejson import pool
 from utils.static_info import DAYS_SINCE_EPOCH
 
 versions = pool.open("data/versions.json").json["versions"]

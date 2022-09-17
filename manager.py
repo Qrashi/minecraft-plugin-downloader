@@ -3,7 +3,7 @@ import sys
 
 from utils.cli import CLIApp
 from utils.file_defaults import CONFIG
-from utils.files import pool
+from singlejson import pool
 from utils.sha244 import get_hash
 from utils.versions import is_valid, Version, VersionRangeRequirement
 from utils.context_manager import context
