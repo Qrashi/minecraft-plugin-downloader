@@ -1,3 +1,6 @@
+"""
+Static information for this program
+"""
 import datetime
 import sys
 from subprocess import run, PIPE
@@ -9,11 +12,10 @@ if __name__ == "__main__":
     print("This file is meant to be imported!")
     sys.exit()
 
-commit = run("git log -n 1 --pretty=format:\"%H\"", stdout=PIPE, stderr=PIPE, shell=True)
-if commit.returncode != 0:
-    print("Could not find current commit.")
-else:
+try:
+    commit = run("git log -n 1 --pretty=format:\"%H\"", stdout=PIPE, stderr=PIPE, shell=True, check=True)
     COMMIT = commit.stdout.decode('utf-8')
+except Exception as e:
+    print(f"Could not find current commit: {e}")
 
 DAYS_SINCE_EPOCH = (datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).days
-

@@ -1,3 +1,6 @@
+"""
+The main file for handling errors
+"""
 from datetime import datetime
 from json import dumps
 from typing import Union

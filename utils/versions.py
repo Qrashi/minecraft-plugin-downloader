@@ -1,3 +1,6 @@
+"""
+Minecraft version utilities
+"""
 from __future__ import annotations
 import sys
 from os import makedirs, path
@@ -18,6 +21,13 @@ versions = pool.open("data/versions.json").json["versions"]
 
 
 def is_valid(version: str, report_errors=False, terminate=False) -> bool:
+    """
+    Check if a string version description is valid
+    :param version: Version to check for validity
+    :param report_errors: weather to report non-compliance to validity rules
+    :param terminate: weather to terminate program on non-compliance to validity rules
+    :return: Weather or not string is a valid version
+    """
     def error(reason, will_continue):
         if report_errors:
             if will_continue:
@@ -44,6 +54,13 @@ def is_valid(version: str, report_errors=False, terminate=False) -> bool:
 
 
 def from_string(version: str, report_errors=False, terminate=False) -> tuple[str, str]:
+    """
+    Split major and minor versions into two strings
+    :param version: Version to split
+    :param report_errors: weather to report non-compliance to validity rules
+    :param terminate: weather to terminate program on non-compliance to validity rules
+    :return: a tuple with both the minor and major version as a strings
+    """
     version = version.replace("-pre", "")
     if is_valid(version, report_errors=report_errors, terminate=terminate):
         if len(version) <= 3:
@@ -84,7 +101,14 @@ def _int(string: str):
 
 
 class Version:
+    """
+    A minecraft version
+    """
     def __init__(self, version: Union[str, Tuple[Union[int, str], Union[int, str]], Dict[str, int]]):
+        """
+        Initialize a new version object
+        :param version: version to construct
+        """
         if type(version) is str:
             self.major, self.minor = from_string(version)
         elif type(version) is dict:
@@ -95,14 +119,20 @@ class Version:
             self.minor = str(version[1])
 
     def string(self) -> str:
+        """
+        Convert version into string
+        :return: converted string
+        """
         if self.minor == "":
             return "1." + str(self.major)
         return "1." + str(self.major) + "." + str(self.minor)
 
-    def dict(self) -> dict:
-        return {"major": int(self.major), "minor": _int(self.minor)}
-
     def matches(self, version) -> bool:
+        """
+        Check if version is equal to another
+        :param version: other version
+        :return: equality of versions
+        """
         return int(version.major) == int(self.major) and _int(version.minor) == _int(self.minor)
 
     def get_next_minor(self) -> Version:
@@ -158,6 +188,11 @@ class Version:
         return _int(version.minor) > _int(self.minor)  # Minor version is smaller
 
     def fulfills(self, requirement: VersionRangeRequirement) -> bool:
+        """
+        Check if version fulfills VersionRangeRequirement
+        :param requirement: requirement to check against
+        :return: weather or not the version complies to the rules of the VersionRangeRequirement
+        """
         if self.matches(requirement.minimum) or self.matches(requirement.maximum):
             return True
         return self.is_lower(requirement.maximum) and self.is_higher(
@@ -165,7 +200,14 @@ class Version:
 
 
 class VersionRangeRequirement:
+    """
+    A Version requirement
+    """
     def __init__(self, requirement: Union[Tuple[Version, Version], Dict[str, str], Dict[str, Dict[str, int]]]):
+        """
+        Initialize a new Version requirement
+        :param requirement: requirement data (tuple of required versions)
+        """
         if type(requirement) is tuple:
             if type(requirement[0]) is str:
                 # two string versions
@@ -191,16 +233,33 @@ class VersionRangeRequirement:
                     self.minimum = Version("1.0")  # Minimum version => Supports every version
 
     def string(self):
+        """
+        Generate a human-readable string
+        :return: human-readable string
+        """
         return "Requires a version between " + self.minimum.string() + " and " + self.maximum.string()
 
     def dict(self):
+        """
+        Return range requirement as a dict
+        :return: range requirement as a dictionary
+        """
         return {"min": self.minimum.string(), "max": self.maximum.string()}
 
     def matches(self, requirement: VersionRangeRequirement):
+        """
+        Check if requirements are equal
+        :param requirement: other requirement
+        :return: state of equality
+        """
         return self.minimum.matches(requirement.minimum) and self.maximum.matches(requirement.maximum)
 
 
 def check_game_versions():
+    """
+    Check for new game versions
+    :return:
+    """
     if pool.open("data/versions.json").json["last_check"] == 0:
         # Create "software" folder
         makedirs(path.abspath(pool.open("data/config.json", default=CONFIG).json["sources_folder"]), exist_ok=True)
@@ -211,7 +270,7 @@ def check_game_versions():
                 pool.open("data/config.json", default=CONFIG).json["version_check_interval"]:
             current_version = Version(pool.open("data/versions.json").json["current_version"])
             # The version might not exist in the versions database because the database is nonexistent!
-            context.software = "main"
+            context.name = "main"
             context.task = "fetching newest game versions"
             context.failure_severity = 3
 

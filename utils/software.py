@@ -1,3 +1,6 @@
+"""
+Software management tools
+"""
 from os import stat
 
 from utils.file_defaults import CONFIG
@@ -14,19 +17,20 @@ from .context_manager import context
 
 
 class Software:
-    def has_source(self) -> bool:
-        sources = pool.open("data/sources.json", default="{}").json
-        if self.software in sources:
-            return enabled(sources[self.software])
-        return False
-
+    """
+    Software to use in servers (can also be configuration), in genereal a managed file
+    """
     def __init__(self, software):
+        """
+        Initialize the software and load parameters
+        :param software: Software to load (name of software)
+        """
         software_json = pool.open("data/software.json", default="{}").json
         if software not in software_json:
             report(9, "software class", "Typo in config: Could not find specified software, exiting!",
                    additional="Provided software: " + software)
             sys.exit()
-        self.software = software
+        self.name = software
         if self.has_source():
             self.source = Source(software)
 
@@ -35,6 +39,16 @@ class Software:
         self.requirements = VersionRangeRequirement(software_json[software]["requirements"])
         self.hash = software_json[software]["hash"]
         self.file = pool.open("data/config.json", default=CONFIG).json["sources_folder"] + "/" + software_json[software]["file"]
+
+    def has_source(self) -> bool:
+        """
+        Check if software has source (way to retrieve the newest builds)
+        :return: boolean (has or does not have)
+        """
+        sources = pool.open("data/sources.json", default="{}").json
+        if self.name in sources:
+            return enabled(sources[self.name])
+        return False
 
     def get_hash(self):
         """
@@ -58,14 +72,14 @@ class Software:
         :return bool: Dependency was updated in some way
         """
         context.failure_severity = self.severity
-        context.software = self.software
+        context.name = self.name
         if self.has_source():
             updated = self.source.update(check, force_retrieve)
             self.hash = self.get_hash()
             return updated
         new_hash = self.get_hash()
         if new_hash != self.hash:
-            cli.success("Detected update for " + self.software)
+            cli.success("Detected update for " + self.name)
             self.hash = new_hash
             return True
         self.hash = new_hash
@@ -79,20 +93,20 @@ class Software:
         :return bool: If the server was updated
         """
         context.failure_severity = self.severity
-        context.software = self.software
+        context.name = self.name
         context.task = f"copying to server \"{server}\""
         servers = pool.open("data/servers.json", default="{}").json
         server_info = servers[server]
-        destination_path = server_info["path"] + server_info["software"][self.software]["copy_path"]
-        progress = cli.progress_bar(f"Updating {self.software} in {server} {dependency_number}", vanish=True)
+        destination_path = server_info["path"] + server_info["software"][self.name]["copy_path"]
+        progress = cli.progress_bar(f"Updating {self.name} in {server} {dependency_number}", vanish=True)
         # Generate destination file...
         try:
             generate(destination_path, default="")
         except Exception as e:
-            report(self.severity, "copy - " + self.software + " > " + server,
+            report(self.severity, "copy - " + self.name + " > " + server,
                    "Could not generate destination file at " + self.file + "! Could be a permission error.",
-                   exception=e, software=self.software)
-            progress.fail("Could not copy " + self.software + " to " + server + ": ")
+                   exception=e, software=self.name)
+            progress.fail("Could not copy " + self.name + " to " + server + ": ")
             print(e)
             cli.warn("Skipping copy...")
             return False
@@ -109,10 +123,10 @@ class Software:
                     copied += len(piece)
                     destination.write(piece)
                     progress.update((copied / total * 100))
-                progress.complete(f"Updated {self.software} in {server}! {dependency_number}")
+                progress.complete(f"Updated {self.name} in {server}! {dependency_number}")
         except Exception as e:
-            report(self.severity, "copy - " + self.software + " > " + server, "Copy process did not finish: ",
-                   exception=e, software=self.software)
+            report(self.severity, "copy - " + self.name + " > " + server, "Copy process did not finish: ",
+                   exception=e, software=self.name)
             progress.fail("Update failed: ")
             print(e)
             cli.warn("Skipping copy")

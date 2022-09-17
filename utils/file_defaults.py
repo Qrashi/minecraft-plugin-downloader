@@ -1,3 +1,8 @@
+"""
+This file stores static default file information
+"""
+
+
 CONFIG = {
   "batch_size": 4096,
   "git_auto_update": True,

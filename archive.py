@@ -7,10 +7,20 @@ from utils.json_file import JsonFile
 
 
 def get_time(timestamp: int) -> str:
+    """
+    Get a formatted time from a timestamp
+    :param timestamp: timestamp to get time from
+    :return: formatted time
+    """
     return datetime.datetime.fromtimestamp(timestamp).strftime("%d.%m.%y at %H:%M")
 
 
 def main(silent: bool):
+    """
+    Manage archives
+    :param silent: silent mode (run without user input)
+    :return:
+    """
     cli.update_sender("ARM")
     cli.load("Accessing archive database & current errors", vanish=True)
     errors_file, events_file = JsonFile("data/errors.json", default="[]"), JsonFile("data/events.json")
@@ -41,6 +51,13 @@ def main(silent: bool):
 
 
 def archive(start: int, end: int, silent: bool):
+    """
+    Archive errors
+    :param start: first entry in archive
+    :param end: end of archive
+    :param silent: run in silent (non-interactive) mode
+    :return:
+    """
     dir_name = f"archive from {get_time(start)} to {get_time(end)}"
     if not silent:
         new_name = cli.ask("Please enter archive name (blank for default): ")
@@ -84,6 +101,10 @@ def archive(start: int, end: int, silent: bool):
 
 
 def recount():
+    """
+    Recount errors / events in overall database
+    :return:
+    """
     archive_info = JsonFile("data/archive/archive.json",
                             default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
                                                                                                                   "\""))
@@ -120,7 +141,7 @@ if __name__ == "__main__":
                             default=False,
                             help='Proceed without taking time and asking for user input')
         parser.add_argument('--recount', dest='recount', action="store_true",
-                            help="Recount errors and events."),
+                            help="Recount errors and events.")
         args = parser.parse_args()
         if args.recount:
             recount()

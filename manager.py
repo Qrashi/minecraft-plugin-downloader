@@ -10,9 +10,13 @@ from utils.context_manager import context
 
 
 def main():
+    """
+    Run the main management program
+    :return:
+    """
     context.task = "managing dependencies"
     context.failure_severity = 9
-    context.software = "manager"
+    context.name = "manager"
     cli.say("Starting, scanning software directory...")
 
     all_software = pool.open("data/software.json", default="{}").json
@@ -68,6 +72,11 @@ def main():
 
 
 def remove(file: str):
+    """
+    Remove software from the software pool
+    :param file: file to remove
+    :return:
+    """
     software_file = pool.open("data/software.json", default="{}")
     sources_file = pool.open("data/sources.json", default="{}")
     all_software = software_file.json
@@ -128,25 +137,38 @@ def remove(file: str):
 
 
 def add(file: str):
+    """
+    Add software to the pool
+    :param file: file to add
+    :return:
+    """
     software_file = pool.open("data/software.json", default="{}")
     all_software = software_file.json
 
     cli.update_sender("ADD")
     cli.success("Adding " + file + " to the software repository...")  # Doesn't actually do something
 
-    def ask():
+    def ask_name():
+        """
+        Ask for the name of the software
+        :return:
+        """
         result = cli.ask("Please enter the name of the software (e.g waterfall): ", vanish=True)
         if result in all_software:
             cli.fail("This software already exists! Try again.")
-            return ask()
+            return ask_name()
         return result
 
-    name = ask()
+    name = ask_name()
 
     identifier = cli.ask("Please enter a human understandable identifier for your software (e.g Proxy / Waterfall): ",
                          vanish=True)
 
-    def ask():
+    def ask_severity():
+        """
+        Ask for severity of software
+        :return:
+        """
         result = cli.ask("How severe would any error related to this software be? (0-10): ", vanish=True)
         if result.isdigit():
             result = int(result)
@@ -154,22 +176,27 @@ def add(file: str):
                 return int(result)
 
         cli.say("Please enter a number between 0 and 10")
-        return ask()
+        return ask_severity()
 
-    severity = ask()
+    severity = ask_severity()
 
     cli.update_sender("VER")
 
-    def ask(version: str) -> Version:
+    def ask_version(version: str) -> Version:
+        """
+        Ask for a specific version (e.g oldest or newest)
+        :param version: version to ask for
+        :return: valid version object
+        """
         version = cli.ask("Please enter " + version + " version (e.g: 1.17.1): ", vanish=True)
         if is_valid(version):
             return Version(version)
         cli.fail("This is not a valid version! ")
-        return ask(version)
+        return ask_version(version)
 
     cli.say("Please define the range of compatible versions (includes the entered version)")
-    minimum = ask("oldest compatible")
-    maximum = ask("newest compatible")
+    minimum = ask_version("oldest compatible")
+    maximum = ask_version("newest compatible")
     range_requirement = VersionRangeRequirement((minimum, maximum))
 
     print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
@@ -181,11 +208,10 @@ def add(file: str):
     cli.say("local file: " + file)
     cli.say("Version requirements: " + range_requirement.string())
 
-    if cli.ask("Is that ok? ").lower() not in ["y", "yes"]:
-        if cli.ask("Are you sure you would like to cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no",
-                                                                                                          ""]:
-            cli.fail("Aborting")
-            sys.exit()
+    if cli.ask("Is that ok? ").lower() not in ["y", "yes"] and \
+            cli.ask("Are you sure you would like to cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no", ""]:
+        cli.fail("Aborting")
+        sys.exit()
 
     cli.update_sender("MNG")
     cli.info("Saving to json...")

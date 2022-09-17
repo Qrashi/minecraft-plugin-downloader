@@ -20,12 +20,19 @@ from utils.file_defaults import CONFIG
 
 
 def main(check_all: bool, re_download: str):
-    context.software = "main"
+    """
+    Execute the main update.
+    :param check_all: Weather to check all software for updates
+    :param re_download: Weather to re-download a specific software
+    :return:
+    """
+    context.name = "main"
     context.failure_severity = 10
     context.task = "loading configurations"
     if check_all:
-        cli.info("Checking compatibility for every software")
-    cli.load(f"Starting update, loading software data...", vanish=True)
+        cli.info("Checking compatibility for every software!")
+    cli.update_sender("INI")
+    cli.load("Starting update, loading data...", vanish=True)
 
     check_game_versions()
     current_game_version = Version(pool.open("data/versions.json").json["current_version"])
@@ -34,21 +41,20 @@ def main(check_all: bool, re_download: str):
     servers = pool.open("data/servers.json", default="{}")
     all_software = software_file.json
     config = pool.open("data/config.json", default=CONFIG).json
-    cli.success("Loaded configurations...", vanish=True)
 
     context.task = "updating configurations"
-    if "config_version" not in config:
-        if config["config_version"] < 1:
-            cli.fail("A lot of breaking changes have been introduced since the last update.")
-            cli.info("Please update all URLAccessFields to the new WebAccessFields")
-            cli.info("When you are done, set the config_version in the config to 1.")
-            cli.fail("Until then, you will not be able to use this program.")
-            cli.info("You may delete your current config to generate a new (valid) one.")
-            sys.exit()
+    if "config_version" not in config and config["config_version"] < 1:
+        cli.fail("A lot of breaking changes have been introduced since the last update.")
+        cli.info("Please update all URLAccessFields to the new WebAccessFields")
+        cli.info("When you are done, set the config_version in the config to 1.")
+        cli.fail("Until then, you will not be able to use this program.")
+        cli.info("You may delete your current config to generate a new (valid) one.")
+        sys.exit()
 
     context.task = "checking for git-updates"
     if config["git_auto_update"]:
-        cli.info("Checking for git updates...", vanish=True)
+        cli.update_sender("GIT")
+        cli.info("Checking for git updates [1/2]", vanish=True)
 
         code = run("git fetch", stdout=PIPE, stderr=PIPE, shell=True)
         if code.returncode != 0:
@@ -60,7 +66,7 @@ def main(check_all: bool, re_download: str):
         else:
             if not code.stdout.decode('utf-8').endswith(" "):
                 # Update found
-                cli.load("Downloading updates...", vanish=True)
+                cli.load("Downloading updates [2/2]", vanish=True)
             code = run("git pull", stdout=PIPE, stderr=PIPE, shell=True)
             if code.returncode != 0:
                 cli.fail("Could not pull updates from git - code " + str(code.returncode))
@@ -78,29 +84,33 @@ def main(check_all: bool, re_download: str):
                     else:
                         cli.success("Updated to commit " + code.stdout.decode('utf-8'))
                         report_event("git", "Updated all files to commit " + code.stdout.decode('utf-8'))
-                    cli.warn("Restarting update script...")
+                    cli.warn("Restarting update script!")
                     os.execl(sys.executable, sys.executable, *sys.argv)
 
-    software_objects = {}
+    cli.update_sender("INI")
+    cli.success("Loaded configurations!")
+    cli.update_sender("SFW")
+    progress = cli.progress_bar("Checking for newest versions...", vanish=True)
 
     context.task = "checking for new software updates"
-    progress = cli.progress_bar("Checking for newest versions...", vanish=True)
     checked = 0
     total_software = len(all_software)
     updated = 0
     check_re_download = not re_download == "none"
+    software_objects = {}
     for software in all_software:
         checked = checked + 1
         progress.update_message("Checking " + software + "...", (checked / total_software) * 100)
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
-                    check_re_download and obj.software == re_download))  # Retrieve the newest software, update hashes increment counter if successful
+                    check_re_download and obj.name == re_download))  # Retrieve the newest software, update hashes increment counter if successful
         updated = updated + 1 if was_updated else updated
         all_software[software]["hash"] = obj.hash
         software_objects[software] = obj
 
     progress.complete("Checked " + str(total_software) + " times for updates")
+    cli.update_sender("SRV")
     # Update every server
     servers_total = len(servers.json)
     servers_iter = 0
@@ -109,7 +119,7 @@ def main(check_all: bool, re_download: str):
     progress = cli.progress_bar("Checking servers for updates")
     for server_name, server_info in servers.json.items():
         servers_iter = servers_iter + 1
-        context.software = server_name
+        context.name = server_name
         context.failure_severity = 10
         context.task = "getting information"
         prog = (servers_iter / servers_total) * 100
@@ -199,7 +209,7 @@ def main(check_all: bool, re_download: str):
                             if "on_update" in server_info["auto_update"]:
                                 # Execute tasks
                                 context.failure_severity = 8
-                                context.software = server_name
+                                context.name = server_name
                                 context.task = "updating server to " + version.string()
                                 for task in server_info["auto_update"]["on_update"]:
                                     if enabled(task):
@@ -224,7 +234,7 @@ def main(check_all: bool, re_download: str):
                     server_info["auto_update"]["blocking"] = {}
 
         context.failure_severity = 8
-        context.software = server_name
+        context.name = server_name
         context.task = "updating dependencies"
         dependencies_total = len(server_info["software"])
         dep_iter = 0
@@ -244,20 +254,21 @@ def main(check_all: bool, re_download: str):
             context.task = "updating " + dependency
             if not server_info["software"][dependency]["enabled"]:
                 continue
-            if software.needs_update(server_info["path"] + info["copy_path"]):  # Skip update if no update happened
-                if server_version.fulfills(software.requirements):
-                    # Software IS compatible, copy is allowed > copy
-                    software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
-                    context.task = "copying " + dependency
-                    changed = True
-                    dependencies_updated = dependencies_updated + 1
+            if software.needs_update(server_info["path"] + info["copy_path"]) and server_version.fulfills(software.requirements):
+                # Skip update if no update happened
+                # Software IS compatible, copy is allowed > copy
+                software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
+                context.task = "copying " + dependency
+                changed = True
+                dependencies_updated = dependencies_updated + 1
 
         updated_servers = updated_servers + 1 if changed else updated_servers
         servers.json[server_name] = server_info
 
+    cli.update_sender("END")
     context.failure_severity = 10
     context.task = "finalizing"
-    context.software = "main"
+    context.name = "main"
     if updated != 0:
         cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
         cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
@@ -276,7 +287,7 @@ if __name__ == "__main__":
         sys.exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
-            report(context.failure_severity, "updater - main", f"Updater quit unexpectedly! {context.software} - {context.task}",
+            report(context.failure_severity, "updater - main", f"Updater quit unexpectedly! {context.name} - {context.task}",
                    additional="Traceback: " + ''.join(traceback.format_exception(None, e, e.__traceback__)),
                    exception=e)
             cli.fail("ERROR: Uncaught exception: ")
