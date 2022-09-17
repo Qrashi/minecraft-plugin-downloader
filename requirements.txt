@@ -1,3 +1,3 @@
 colorama==0.4.4
 requests~=2.26.0
-singlejson==0.3
+singlejson==0.2.1
