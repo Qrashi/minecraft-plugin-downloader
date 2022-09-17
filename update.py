@@ -100,7 +100,7 @@ def main(check_all: bool, re_download: str):
     software_objects = {}
     for software in all_software:
         checked = checked + 1
-        progress.update_message("Checking " + software + "...", (checked / total_software) * 100)
+        progress.update_message("Checking " + software + "...")
         obj = Software(software)  # Initialize every software
         was_updated = obj.retrieve_newest(
             check_all, (
@@ -123,7 +123,7 @@ def main(check_all: bool, re_download: str):
         context.failure_severity = 10
         context.task = "getting information"
         prog = (servers_iter / servers_total) * 100
-        progress.update_message("Updating " + server_name, prog)
+        progress.update_message("Updating " + server_name)
         sleep(0.05)
         changed = False
         # Get the server version
@@ -152,7 +152,7 @@ def main(check_all: bool, re_download: str):
                             server_info["auto_update"]["blocking"][version.string()] = {}
                         ready = True  # ready = ready for version increment
                         failing = 0
-                        progress.update_message("Checking " + server_name + " version compatibility for " + version.string(), 0)
+                        progress.update_message("Checking " + server_name + " version compatibility for " + version.string())
                         dep_iter = 0
                         dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
@@ -204,7 +204,7 @@ def main(check_all: bool, re_download: str):
                                 version_access.update(version.string())
                             server_info["auto_update"]["blocking"].pop(version.string())
                             progress.update_message(
-                                "Updating " + server_name + " from " + server_version.string() + " to " + version.string(), 0)
+                                "Updating " + server_name + " from " + server_version.string() + " to " + version.string())
                             update = True
                             if "on_update" in server_info["auto_update"]:
                                 # Execute tasks
@@ -238,11 +238,11 @@ def main(check_all: bool, re_download: str):
         context.task = "updating dependencies"
         dependencies_total = len(server_info["software"])
         dep_iter = 0
-        progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]", prog)
+        progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]")
         for dependency, info in server_info["software"].items():
             sleep(0.01)
             dep_iter = dep_iter + 1
-            progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]", prog)
+            progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]")
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(

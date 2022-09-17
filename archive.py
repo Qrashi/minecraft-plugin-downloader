@@ -116,8 +116,7 @@ def recount():
     archives = len(archive_info.json["archives"])
     archives_checked = 0
     for dir_name in archive_info.json["archives"]:
-        progress.update_message(f"Counting {dir_name} ({archives_checked}/{archives})",
-                                done=(archives_checked / archives) * 100)
+        progress.update_message(f"Counting {dir_name} ({archives_checked}/{archives})")
         archive_data, archived_errors, archived_events = JSONFile(f"data/archive/{dir_name}/data.json"), JSONFile(
             f"data/archive/{dir_name}/errors.json"), JSONFile(f"data/archive/{dir_name}/events.json")
         nr_errors = len(archived_errors.json)
