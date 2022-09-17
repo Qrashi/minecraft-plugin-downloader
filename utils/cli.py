@@ -299,7 +299,7 @@ def progress_bar(message, progress: int = 0, vanish: bool = False):
             self.__multiplier = round(floor(space_left * 0.1) * 0.1, 1)
             # Round to the lowest ten and multiply by 0.1 so that 80 gets 0.8 and only take one decimal
 
-        def update_message(self, updated_message: str, done: int = __progress):
+        def update_message(self, updated_message: str, done: int = None):
             """
             Update the message of the ProgressBar
             :param updated_message: Updated message to display
@@ -307,7 +307,8 @@ def progress_bar(message, progress: int = 0, vanish: bool = False):
             :return:
             """
             self.__message = updated_message
-            self.__progress = done
+            if done is not None:
+                self.__progress = done
             self.calculate_multiplier()
             self.show()
 
