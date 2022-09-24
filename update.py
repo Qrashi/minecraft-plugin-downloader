@@ -286,14 +286,12 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
     context.task = "finalizing"
     context.name = "main"
     if updated != 0:
-        cli.success("Detected and downloaded updates for " + str(updated) + " dependencies")
         cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
     else:
-        cli.success("Everything up to date!")
+        cli.success("All servers up to date!")
 
+    cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 3, green=True)
     sync()
-    cli.success("Update sequence complete")
-
 
 if __name__ == "__main__":
     try:
