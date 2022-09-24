@@ -35,7 +35,7 @@ class Software:
         self.severity = software["severity"]
         self.requirements = VersionRangeRequirement(software["requirements"])
         self.hash = software["hash"]
-        self.file = load("data/config.json", default=CONFIG).json["sources_folder"] + "/" + ssoftware["file"]
+        self.file = load("data/config.json", default=CONFIG).json["sources_folder"] + "/" + software["file"]
 
     def has_source(self) -> bool:
         """
