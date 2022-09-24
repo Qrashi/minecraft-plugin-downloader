@@ -42,10 +42,6 @@ def is_valid(version: str) -> bool:
         cli.fail(f"Malformed version retrieved! {version} is does not start with 1.xxx")
         report(9, "version integrity checker", f"{version} does not start with 1.xxx! {context.name} - {context.task}")
         return False
-    if not version[3:].isdigit():
-        cli.fail(f"Malformed version retrieved! {version} is not just numbers and dots")
-        report(9, "version integrity checker", f"{version} has some non-numeric characters! {context.name} - {context.task}")
-        return False
     return True
 
 
