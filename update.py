@@ -20,11 +20,12 @@ from utils.context_manager import context
 from utils.file_defaults import CONFIG
 
 
-def main(check_all_compatibility: bool, re_download: str):
+def main(check_all_compatibility: bool, re_download: str, skip_dependency_check: bool):
     """
     Execute the main update.
     :param check_all_compatibility: Weather to check all software for updates
     :param re_download: Weather to re-download a specific software
+    :param skip_dependency_check: Skip checking for new dependencies
     :return:
     """
     context.name = "main"
@@ -103,7 +104,10 @@ def main(check_all_compatibility: bool, re_download: str):
         checked = checked + 1
         progress.update_message(f"Checking {software_name}...", done=(checked / total_software) * 100)
         software = Software(software_data, software_name)
-        was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download))
+        if skip_dependency_check:
+            was_updated = False
+        else:
+            was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download))
         updated = updated + 1 if was_updated else updated
         software_data["hash"] = software.hash
         software_objects[software_name] = software
@@ -293,7 +297,7 @@ def main(check_all_compatibility: bool, re_download: str):
 
 if __name__ == "__main__":
     try:
-        main(args.check_all_compatibility, args.redownload)
+        main(args.check_all_compatibility, args.redownload, args.skip_dependency_check)
     except KeyboardInterrupt:
         cli.fail("Aborted, no data saved!")
         sys.exit()
