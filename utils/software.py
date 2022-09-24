@@ -21,25 +21,21 @@ class Software:
     Software to use in servers (can also be configuration), in genereal a managed file
     """
 
-    def __init__(self, software):
+    def __init__(self, software, name):
         """
         Initialize the software and load parameters
-        :param software: Software to load (name of software)
+        :param software: Software data
+        :param name: name of software
         """
-        software_json = load("data/software.json", default="{}").json
-        if software not in software_json:
-            report(9, "software class", "Typo in config: Could not find specified software, exiting!",
-                   additional="Provided software: " + software)
-            sys.exit()
-        self.name = software
+        self.name = name
         if self.has_source():
-            self.source = Source(software)
+            self.source = Source(name)
 
-        self.identifier = software_json[software]["identifier"]
-        self.severity = software_json[software]["severity"]
-        self.requirements = VersionRangeRequirement(software_json[software]["requirements"])
-        self.hash = software_json[software]["hash"]
-        self.file = load("data/config.json", default=CONFIG).json["sources_folder"] + "/" + software_json[software]["file"]
+        self.identifier = software["identifier"]
+        self.severity = software["severity"]
+        self.requirements = VersionRangeRequirement(software["requirements"])
+        self.hash = software["hash"]
+        self.file = load("data/config.json", default=CONFIG).json["sources_folder"] + "/" + ssoftware["file"]
 
     def has_source(self) -> bool:
         """

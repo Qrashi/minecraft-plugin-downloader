@@ -102,7 +102,7 @@ def main(check_all_compatibility: bool, re_download: str):
     for software_name, software_data in all_software.items():
         checked = checked + 1
         progress.update_message(f"Checking {software_name}...", done=(checked / total_software) * 100)
-        software = Software(software_data)
+        software = Software(software_data, software_name)
         was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download))
         updated = updated + 1 if was_updated else updated
         software_data["hash"] = software.hash
