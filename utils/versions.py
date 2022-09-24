@@ -296,6 +296,7 @@ def check_game_versions():
 
         if versions["last_check"] == 0:
             versions["last_check"] = DAYS_SINCE_EPOCH
+            versions["current_version"] = highest.string()
             report_event("Initialisation", "Current minecraft version" + highest.string())
             cli.success("Initialisation complete!")
             sync()
