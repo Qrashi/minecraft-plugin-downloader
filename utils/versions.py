@@ -2,6 +2,8 @@
 Minecraft version utilities
 """
 from __future__ import annotations
+
+import os
 import sys
 from os import makedirs, path
 
@@ -14,61 +16,47 @@ from utils.context_manager import context
 from utils.dict_utils import enabled
 from utils.errors import report
 from utils.events import report as report_event
-from utils.file_defaults import CONFIG
+from utils.file_defaults import CONFIG, VERSIONS
 from utils.static_info import DAYS_SINCE_EPOCH
 
-versions = load("data/versions.json").json["versions"]
+versions = load("data/versions.json", default=VERSIONS).json
 
 
-def is_valid(version: str, report_errors=False, terminate=False) -> bool:
+def is_valid(version: str) -> bool:
     """
     Check if a string version description is valid
     :param version: Version to check for validity
-    :param report_errors: weather to report non-compliance to validity rules
-    :param terminate: weather to terminate program on non-compliance to validity rules
     :return: Weather or not string is a valid version
     """
-    def error(reason, will_continue):
-        """
-        Report an error if version is invalid
-        :param reason: reason for error
-        :param will_continue: weather or not program will continue
-        :return:
-        """
-        if report_errors:
-            if will_continue:
-                report(9, "Version integrity checker", reason, additional="Program will continue despite error")
-            else:
-                report(9, "Version integrity checker", reason, additional="Program terminated.")
-                if terminate:
-                    print("Error: Version \"" + version + "\" NOT valid! Program stopped, files NOT saved.")
-                    sys.exit()
 
     version = str(version)
     if len(version) > 7:  # Longer than 1.17.77 (6)
-        error(version + " is too long!", False)
+        cli.fail(f"Malformed version retrieved! {version} is too long!")
+        report(9, "version integrity checker", f"{version} is too long (max 6)! {context.name} - {context.task}")
         return False
     if len(version) < 3:  # Shorter than 1.1 (3)#
-        error(version + " is too short!", False)
+        cli.fail(f"Malformed version retrieved! {version} is too short!")
+        report(9, "version integrity checker", f"{version} is too short (min 3)! {context.name} - {context.task}")
         return False
     if version[:2] != "1.":  # Minecraft 2.x when?
-        error(version + " does not have the usual \"1.\" pre clause", False)
+        cli.fail(f"Malformed version retrieved! {version} is does not start with 1.xxx")
+        report(9, "version integrity checker", f"{version} does not start with 1.xxx! {context.name} - {context.task}")
         return False
     if not version[3:].isdigit():
-        error(version + " is not only numbers and dots!", False)
+        cli.fail(f"Malformed version retrieved! {version} is not just numbers and dots")
+        report(9, "version integrity checker", f"{version} has some non-numeric characters! {context.name} - {context.task}")
+        return False
     return True
 
 
-def from_string(version: str, report_errors=False, terminate=False) -> tuple[str, str]:
+def from_string(version: str) -> tuple[str, str]:
     """
     Split major and minor versions into two strings
     :param version: Version to split
-    :param report_errors: weather to report non-compliance to validity rules
-    :param terminate: weather to terminate program on non-compliance to validity rules
     :return: a tuple with both the minor and major version as a strings
     """
     version = version.replace("-pre", "")
-    if is_valid(version, report_errors=report_errors, terminate=terminate):
+    if is_valid(version):
         if len(version) <= 3:
             major = version[2]  # We only take the 9 from 1.9
             if len(version) > 3:  # Has minor version because major is at least (1.9)
@@ -89,8 +77,6 @@ def from_string(version: str, report_errors=False, terminate=False) -> tuple[str
         else:
             minor = ""  # No minor version
         return major, minor
-    if terminate:
-        sys.exit()
     else:
         return "", ""
 
@@ -152,7 +138,7 @@ class Version:
             attempt = Version((self.major, "1"))
         else:
             attempt = Version((self.major, str(int(self.minor) + 1)))
-        if attempt.string() in versions:
+        if attempt.string() in versions["versions"]:
             return attempt
         # There is no next major version
         return self.get_next_major()
@@ -163,10 +149,10 @@ class Version:
         :return Version: Version
         """
         attempt = Version((str(int(self.major) + 1), ""))
-        if attempt.string() in versions:
+        if attempt.string() in versions["versions"]:
             return attempt
         attempt = Version((str(int(self.major) + 1), 1))
-        if attempt.string() in versions:
+        if attempt.string() in versions["versions"]:
             return attempt
         return self
 
@@ -268,58 +254,63 @@ def check_game_versions():
     Check for new game versions
     :return:
     """
-    if load("data/versions.json").json["last_check"] == 0:
-        # Create "software" folder
-        makedirs(path.abspath(load("data/config.json", default=CONFIG).json["sources_folder"]), exist_ok=True)
-    if load("data/versions.json").json["last_check"] == 0 or enabled(
-            load("data/config.json", default=CONFIG).json["newest_game_version"]):
-        # If there has not been a last check (initialisation) will always check versions.
-        if (DAYS_SINCE_EPOCH - load("data/versions.json").json["last_check"]) > \
-                load("data/config.json", default=CONFIG).json["version_check_interval"]:
-            current_version = Version(load("data/versions.json").json["current_version"])
-            # The version might not exist in the versions database because the database is nonexistent!
-            context.name = "main"
-            context.task = "fetching newest game versions"
-            context.failure_severity = 3
+    context.task = "checking for new game versions"
+    context.failure_severity = 3
+    context.name = "main"
+    config = load("data/config.json", default=CONFIG).json
 
-            cli.loading("Checking for new version...", vanish=True)
-            versions_online = WebAccessField(
-                load("data/config.json", default=CONFIG).json["newest_game_version"]).execute({})
-            if isinstance(versions_online, Exception):
-                cli.fail(f"Could not retrieve newest game version online ({versions_online})")
-                if load("data/versions.json").json["last_check"]:
-                    cli.fail("Error while retrieving data for first time setup, cannot continue!")
-                    cli.fail(
-                        "This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
-                    print(versions_online)
-                    sys.exit()
+    if versions["last_check"] == 0:
+        # Initialize updater
+        folder = config["sources_folder"]
+        makedirs(path.abspath(folder), exist_ok=True)
+        cli.success(f"Created software folder at {folder}")
 
-            versions_json = load("data/versions.json").json
-            if type(versions_online) is list:
-                highest = Version("1.0")
-                for version in versions_online:
-                    version = Version(version)
-                    if version.string() not in versions_json["versions"]:
-                        versions_json["versions"].append(version.string())
-                    if version.is_higher(highest):
-                        highest = version
+    if versions["last_check"] == 0 or (DAYS_SINCE_EPOCH - versions["last_check"]) > config["version_check_interval"]:
+        cli.loading("Checking for newest versions...", vanish=True)
+        current_highest = Version(versions["current_version"])
+
+        retrieved_version_data = WebAccessField(config["newest_game_version"]).execute({})
+        if isinstance(retrieved_version_data, Exception):
+            cli.fail(f"Could not retrieve newest game version online ({retrieved_version_data})")
+            if load("data/versions.json").json["last_check"]:
+                cli.fail("Error while retrieving data for first time setup, cannot continue!")
+                cli.fail(
+                    "This could be a config issue (see data/data_info.md -> config.json), please read the documentation.")
+                print(retrieved_version_data)
+                sys.exit()
+
+        updated = False
+        if type(retrieved_version_data) is list:
+            highest = Version("1.0")
+            for version in retrieved_version_data:
+                version = Version(version)
+                if version.string() not in versions["versions"]:
+                    versions["versions"].append(version.string())
+                    updated = True
+                if version.is_higher(highest):
+                    highest = version
+        else:
+            highest = current_highest
+            version = Version(retrieved_version_data)
+            if version.string() not in versions["versions"]:
+                versions["versions"].append(version.string())
+                updated = True
+                if version.is_higher(current_highest):
+                    highest = version
+
+        if versions["last_check"] == 0:
+            versions["last_check"] = DAYS_SINCE_EPOCH
+            report_event("Initialisation", "Current minecraft version" + highest.string())
+            cli.success("Initialisation complete!")
+            sync()
+            sys.exit()
+
+        versions["last_check"] = DAYS_SINCE_EPOCH
+        versions["current_version"] = highest.string()
+        if updated:
+            report_event("Game version checker", f"Retrieved new game versions. New highest version: {highest.string()}")
+            if current_highest.matches(highest):
+                cli.success("Fetched new minecraft version(s)!")
             else:
-                highest = Version(versions_online)
-                versions_json["versions"].append(highest.string())
+                cli.success(f"Fetched new minecraft version(s): {highest.string()}")
 
-            if current_version.matches(highest):
-                load("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
-            else:
-                load("data/versions.json").json["current_version"] = highest.string()
-                if load("data/versions.json").json["last_check"] == 0:
-                    load("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
-                    report_event("Initialisation",
-                                 "Initialisation complete, the current minecraft version was set to " + highest.string())
-                    # On first initialisation. the version is 1.0 so rather give an "initialisation complete" event
-                    cli.success("Initialisation complete!")
-                    sync()
-                    sys.exit()
-                else:
-                    load("data/versions.json").json["last_check"] = DAYS_SINCE_EPOCH
-                    report_event("Game version checker", "The game version was updated to " + highest.string())
-                    cli.success("Fetched new minecraft version(s): " + highest.string())

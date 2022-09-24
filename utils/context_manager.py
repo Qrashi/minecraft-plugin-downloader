@@ -9,7 +9,7 @@ class Context:
     """
 
     task: str = "initializing"  # task always with "ing" at the end
-    software: str = "main program"
+    name: str = "main program"
     failure_severity: int = 10
 
 

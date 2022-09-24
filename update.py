@@ -3,6 +3,7 @@ import sys
 import traceback
 from subprocess import run, PIPE
 from time import sleep
+from typing import Dict
 
 from singlejson import load, sync
 from utils.static_info import DAYS_SINCE_EPOCH
@@ -19,23 +20,24 @@ from utils.context_manager import context
 from utils.file_defaults import CONFIG
 
 
-def main(check_all: bool, re_download: str):
+def main(check_all_compatibility: bool, re_download: str):
     """
     Execute the main update.
-    :param check_all: Weather to check all software for updates
+    :param check_all_compatibility: Weather to check all software for updates
     :param re_download: Weather to re-download a specific software
     :return:
     """
     context.name = "main"
     context.failure_severity = 10
     context.task = "loading configurations"
-    if check_all:
-        cli.info("Checking compatibility for every software!")
-    cli.update_sender("INI")
-    cli.loading("Starting update, loading data...", vanish=True)
 
+    cli.update_sender("INI")
+    cli.loading("Starting update, loading game version data...", vanish=True)
     check_game_versions()
     current_game_version = Version(load("data/versions.json").json["current_version"])
+
+    if check_all_compatibility:
+        cli.info("Checking compatibility for every software!")
 
     software_file = load("data/software.json", default="{}")
     servers = load("data/servers.json", default="{}")
@@ -87,31 +89,32 @@ def main(check_all: bool, re_download: str):
                     cli.warn("Restarting update script!")
                     os.execl(sys.executable, sys.executable, *sys.argv)
 
-    cli.update_sender("INI")
-    cli.success("Loaded configurations!")
-    cli.update_sender("SFW")
-    progress = cli.progress_bar("Checking for newest versions...", vanish=True)
-
+    # Update software (fetch sources)
     context.task = "checking for new software updates"
-    checked = 0
-    total_software = len(all_software)
-    updated = 0
+    cli.update_sender("SFW")
     check_re_download = not re_download == "none"
-    software_objects = {}
-    for software in all_software:
-        checked = checked + 1
-        progress.update_message("Checking " + software + "...", done=(checked / total_software) * 100)
-        obj = Software(software)  # Initialize every software
-        was_updated = obj.retrieve_newest(
-            check_all, (
-                    check_re_download and obj.name == re_download))  # Retrieve the newest software, update hashes increment counter if successful
-        updated = updated + 1 if was_updated else updated
-        all_software[software]["hash"] = obj.hash
-        software_objects[software] = obj
+    progress = cli.progress_bar("Checking for newest versions...")
 
-    progress.complete("Checked " + str(total_software) + " times for updates")
+    total_software = len(all_software)
+    checked = updated = 0
+    software_objects: Dict[str, Software] = {}
+
+    for software_name, software_data in all_software.items():
+        checked = checked + 1
+        progress.update_message(f"Checking {software_name}...", done=(checked / total_software) * 100)
+        software = Software(software_data)
+        was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download))
+        updated = updated + 1 if was_updated else updated
+        software_data["hash"] = software.hash
+        software_objects[software_name] = software
+
+    if updated == 0:
+        progress.complete(f"Checked {total_software} times for updates")
+    else:
+        progress.complete(f"Checked {total_software} for updates, found {updated}")
+
+    # Update servers
     cli.update_sender("SRV")
-    # Update every server
     servers_total = len(servers.json)
     servers_iter = 0
     dependencies_updated = 0

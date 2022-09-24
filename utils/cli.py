@@ -265,6 +265,7 @@ def simple_wait_fixed_time(message: str, end_message: str, time: int, vanish: bo
 def progress_bar(message, progress: int = 0, vanish: bool = False):
     """
     Return a progress bar object
+    :param progress: Initial progress
     :param message: Starting message to display
     :param vanish: Weather or not the message should vanish
     :return: A ProgressBar object

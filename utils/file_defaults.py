@@ -19,3 +19,9 @@ CONFIG = {
   },
   "config_version": 1
 }
+
+VERSIONS = {
+    "current_version": "1.0",
+    "last_check": 0,
+    "versions": []
+}

@@ -68,8 +68,8 @@ class Software:
     def retrieve_newest(self, check: bool, force_retrieve: bool) -> bool:
         """
         Retrieves the newest version from the internet if possible
-        :param force_retrieve: bool; Always download the newest build
         :param check: bool; Always fetch compatibility
+        :param force_retrieve: bool; Always download the newest build
         :return bool: Dependency was updated in some way
         """
         context.failure_severity = self.severity
