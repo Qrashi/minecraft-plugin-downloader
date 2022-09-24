@@ -276,8 +276,8 @@ def check_game_versions():
                 sys.exit()
 
         updated = False
+        highest = current_highest
         if type(retrieved_version_data) is list:
-            highest = Version("1.0")
             for version in retrieved_version_data:
                 version = Version(version)
                 if version.string() not in versions["versions"]:
@@ -286,7 +286,6 @@ def check_game_versions():
                 if version.is_higher(highest):
                     highest = version
         else:
-            highest = current_highest
             version = Version(retrieved_version_data)
             if version.string() not in versions["versions"]:
                 versions["versions"].append(version.string())
