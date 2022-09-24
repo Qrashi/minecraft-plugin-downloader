@@ -372,7 +372,7 @@ class Source:
         :return: Weather or not the update was successful
         """
         if "compatibility" in self.config and enabled(self.config["compatibility"]) and \
-                self.config["compatibility"]["check"] == "always" or check:
+                (self.config["compatibility"]["check"] == "always" or check):
             self.check_compatibility()
         newest_build = self.get_newest_build()
         cli.info(f"Newest build for {self.name} is {newest_build}", vanish=True)
