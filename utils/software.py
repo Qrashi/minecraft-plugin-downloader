@@ -11,7 +11,8 @@ from singlejson import load
 from .io import generate
 from .sha244 import get_hash
 from .source import Source
-import sys
+
+from shutil import copy
 from .versions import VersionRangeRequirement
 from .context_manager import context
 
@@ -95,38 +96,23 @@ class Software:
         servers = load("data/servers.json", default="{}").json
         server_info = servers[server]
         destination_path = server_info["path"] + server_info["software"][self.name]["copy_path"]
-        progress = cli.progress_bar(f"Updating {self.name} in {server} {dependency_number}", vanish=True)
         # Generate destination file...
         try:
             generate(destination_path, default="")
         except Exception as e:
-            report(self.severity, "copy - " + self.name + " > " + server,
-                   "Could not generate destination file at " + self.file + "! Could be a permission error.",
+            report(self.severity, f"copy - {self.name} > {server}", f"Could not generate destination file at " +
+                   f"{destination_path}! Could be a permission error.",
                    exception=e, software=self.name)
-            progress.fail("Could not copy " + self.name + " to " + server + ": ")
-            print(e)
-            cli.warn("Skipping copy...")
+            cli.fail(f"Could not copy {self.name} to {server}!")
             return False
 
         # Copy file
         try:
-            with open(self.file, "rb") as source, open(destination_path, "wb") as destination:
-                copied = 0  # Copied bytes
-                total = stat(self.file).st_size
-                while True:
-                    piece = source.read(load("data/config.json", default=CONFIG).json["batch_size"])
-                    if not piece:
-                        break  # End of file
-                    copied += len(piece)
-                    destination.write(piece)
-                    progress.update((copied / total * 100))
-                progress.complete(f"Updated {self.name} in {server}! {dependency_number}")
+            copy(self.file, destination_path)
         except Exception as e:
-            report(self.severity, "copy - " + self.name + " > " + server, "Copy process did not finish: ",
+            report(self.severity, f"copy - {self.name} > {server}", "Copy process did not finish: ",
                    exception=e, software=self.name)
-            progress.fail("Update failed: ")
-            print(e)
-            cli.warn("Skipping copy")
+            cli.fail(f"Could not copy {self.name} to {server} - see errors.json!")
             return False
         return True
 

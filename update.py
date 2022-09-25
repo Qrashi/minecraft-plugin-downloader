@@ -2,22 +2,22 @@ import os
 import sys
 import traceback
 from subprocess import run, PIPE
-from time import sleep
 from typing import Dict
 
 from singlejson import load, sync
-from utils.static_info import DAYS_SINCE_EPOCH
-from utils.argparser import args
+
 import utils.cli as cli
 from utils.access_fields import FileAccessField
+from utils.argparser import args
+from utils.context_manager import context
+from utils.dict_utils import enabled
 from utils.errors import report
 from utils.events import report as report_event
-from utils.software import Software
-from utils.versions import Version, check_game_versions
-from utils.dict_utils import enabled
-from utils.tasks import execute
-from utils.context_manager import context
 from utils.file_defaults import CONFIG
+from utils.software import Software
+from utils.static_info import DAYS_SINCE_EPOCH
+from utils.tasks import execute
+from utils.versions import Version, check_game_versions
 
 
 def main(check_all_compatibility: bool, re_download: str, skip_dependency_check: bool):
@@ -131,7 +131,6 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         context.task = "getting information"
         prog = (servers_iter / servers_total) * 100
         progress.update_message("Updating " + server_name, prog)
-        sleep(0.05)
         changed = False
         # Get the server version
         if server_info["version"]["type"] == "version":
@@ -164,7 +163,6 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
                         dep_iter = 0
                         dependencies_total = len(server_info["software"])
                         for dependency in server_info["software"]:
-                            sleep(0.05)
                             progress.update((dep_iter / dependencies_total) * 100)
                             if not server_info["software"][dependency]["enabled"]:
                                 if dependency in server_info["auto_update"]["blocking"][version.string()]:
@@ -239,7 +237,6 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
                                 report_event("updater - " + server_name,
                                              "Server updated to " + version.string())
                                 progress.complete("Updated " + server_name + " to " + version.string() + "!")
-                                sleep(0.2)
 
                         else:
                             progress.fail(server_name + " not compatible with " + version.string() + "(" + str(
@@ -253,11 +250,10 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         context.task = "updating dependencies"
         dependencies_total = len(server_info["software"])
         dep_iter = 0
-        progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]", done=prog)
+        progress.update_message(f"Checking {server_name} dependencies [{dep_iter}/{dependencies_total}]", done=prog)
         for dependency, info in server_info["software"].items():
-            sleep(0.01)
             dep_iter = dep_iter + 1
-            progress.update_message(f"Updating {server_name} dependencies [{dep_iter}/{dependencies_total}]")
+            progress.update_message(f"Checking {server_name} dependencies [{dep_iter}/{dependencies_total}]")
             if dependency not in all_software:
                 # >> Typo in config
                 cli.fail(
@@ -273,8 +269,9 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
                     software.requirements):
                 # Skip update if no update happened
                 # Software IS compatible, copy is allowed > copy
-                software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
                 context.task = "copying " + dependency
+                progress.update_message(f"Updating {server_name} dependencies - {dependency}")
+                software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
                 changed = True
                 dependencies_updated = dependencies_updated + 1
 
