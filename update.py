@@ -113,9 +113,9 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         software_objects[software_name] = software
 
     if updated == 0:
-        progress.complete(f"Checked {total_software} times for updates")
+        progress.complete(f"Checked for {total_software}  updates")
     else:
-        progress.complete(f"Checked {total_software} for updates, found {updated}")
+        progress.complete(f"Found {updated} updates, checked {total_software}")
 
     # Update servers
     cli.update_sender("SRV")
@@ -283,9 +283,9 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
     context.task = "finalizing"
     context.name = "main"
     if updated != 0:
-        cli.success("Updated " + str(dependencies_updated) + " dependencies in " + str(updated_servers) + " servers.")
+        progress.complete(f"Updated {dependencies_updated} dependencies in {updated_servers} servers.")
     else:
-        cli.success("All servers up to date!")
+        progress.complete(f"Checked {len(servers.json)} servers for updates.")
 
     cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 3, green=True)
     sync()
