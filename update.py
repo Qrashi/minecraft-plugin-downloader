@@ -287,7 +287,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
     else:
         progress.complete(f"Checked {len(servers.json)} servers for updates.")
 
-    cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 3, green=True)
+    cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 1.5, green=True)
     sync()
 
 
