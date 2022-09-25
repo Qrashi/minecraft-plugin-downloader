@@ -6,7 +6,7 @@ from __future__ import annotations
 from math import floor
 import sys
 from time import sleep
-from typing import Callable
+from typing import Callable, Union
 
 from .file_defaults import CONFIG
 from singlejson import JSONFile
@@ -232,7 +232,7 @@ def loading(message: str, vanish: bool = False):
     print_pretty(Fore.BLUE, ">", message, vanish)
 
 
-def simple_wait_fixed_time(message: str, end_message: str, time: int, vanish: bool = False,
+def simple_wait_fixed_time(message: str, end_message: str, time: Union[int, float], vanish: bool = False,
                            green: bool = False):
     """
     Display a message for a fixed amount of time. Execution of your programm will be stopped while this is "ticking"
@@ -246,7 +246,7 @@ def simple_wait_fixed_time(message: str, end_message: str, time: int, vanish: bo
     print_pretty(Fore.LIGHTYELLOW_EX, loading_small[0], loading_big[0] + " " + message, True)
     pos_small = 1
     pos_big = 1
-    for _ in range(0, time * 4):
+    for _ in range(0, int(time * 4)):
         sleep(0.25)
         pos_small = pos_small + 1
         pos_big = pos_big + 0.5
