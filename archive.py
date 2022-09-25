@@ -57,7 +57,7 @@ def archive(start: int, end: int, silent: bool):
         if new_name != "":
             dir_name = new_name
 
-    if dir_name in exists(f"data/archive/{dir_name}/data.json"):
+    if exists(f"data/archive/{dir_name}/data.json"):
         cli.fail("An archive with the same name already exists!")
         sys.exit()
 
