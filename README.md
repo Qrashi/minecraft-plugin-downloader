@@ -13,7 +13,7 @@ This set of small python scripts is aimed to help you manage your server plugins
 * Pretty CLI interface :)
 * Clear entry end exit point, easy to embed
 
-![script-in-action](https://user-images.githubusercontent.com/56923218/140615054-b18bbd67-6987-450c-8a6d-dbcf7c996f2f.gif)
+![minecraft-plugin-downloader](https://user-images.githubusercontent.com/56923218/192155894-1346d39b-6d1e-473d-9be3-7375d1caed6d.gif)
 
 ## Installation
 
