@@ -1,5 +1,6 @@
 import os
 import sys
+from time import sleep
 
 import utils.cli as cli
 from utils.file_defaults import CONFIG
@@ -41,8 +42,8 @@ def main():
             detected_files[file] = "removed"
 
     if len(detected_files) == 0:
-        cli.fail("Scan complete, could not find any new / deleted files!")
-        cli.say("Please put / remove the new software into the software folder!")
+        cli.success("Scan complete, could not find any new / deleted files!")
+        cli.warn("Please put / remove the new software into the software folder!")
         sys.exit()
 
     cli.success("Found " + str(len(detected_files)) + " changed files.")
@@ -51,7 +52,7 @@ def main():
         file = list(detected_files)[0]
         operation = detected_files[file]
     else:
-        cli.say("Detected multiple new files. Please choose from the list: ")
+        cli.warn("Detected multiple new files. Please choose from the list: ")
         for detected_file, operation in detected_files.items():
             print("- " + detected_file + " (" + operation + ")")
 
@@ -78,61 +79,62 @@ def remove(file: str):
     :return:
     """
     software_file = load("data/software.json", default="{}")
-    sources_file = load("data/sources.json", default="{}")
-    all_software = software_file.json
+    sources = load("data/sources.json", default="{}")
+    software = software_file.json
+    servers = load("data/servers.json").json
 
     cli.update_sender("RM")
     cli.success("Removing " + file + " from the software repository...")
 
-    name = ""
-    software_info = {}
-    for name, software in all_software.items():
-        if software["file"] == file:
-            software_info = software
+    found = name = software_info = False
+    for name, software_info in software.items():
+        if software_info["file"] == file:
+            found = True
             break
 
-    rm_files = cli.ask("Would you like do delete all registered occurrences of this dependency? (Copies of the "
-                       "dependency in a server) ") in ["y", "yes"]
+    if not found:
+        cli.fail("Could not find software in software register.")
+        sys.exit()
+
+    to_remove = []
+    for server_name, info in servers.items():
+        if name in info["software"]:
+            to_remove.append([info["path"] + info["software"][name]["copy_path"], server_name])
+
+    rm_files = cli.ask(f"Would you like to delete all {len(to_remove)} occurrences?") in ["y", "yes"]
     print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
     cli.update_sender("SUM")
     cli.info("Summary")
     cli.say("To remove: ")
-    cli.say(
-        "dependency \"" + software_info["identifier"] + "\" (" + name + ") [" + str(
-            software_info["severity"]) + "]")
+    cli.say("dependency \"" + software_info["identifier"] + f"\" ({name}) [" + str(software_info["severity"]) + "]")
     cli.say("local file: " + file)
-    cli.say("Version requirements: " + VersionRangeRequirement(software_info["requirements"]).string())
-    if name in sources_file.json:
-        cli.say(name + "'s auto-update configuration")
+    if name in sources.json:
+        cli.info(f"{name}'s auto-update configuration")
     if rm_files:
-        cli.say("ALL LOCAL COPIED DEPENDENCIES (in all servers!)")
+        cli.warn("ALL LOCAL COPIED DEPENDENCIES (in all servers!)")
 
     if cli.ask("Please confirm operation: (yes / no) ").lower() not in ["y", "yes"]:
         cli.fail("Aborting")
         sys.exit()
 
-    servers_file = load("data/servers.json", default="{}")
-
     if rm_files:
-        servers_rm = []
-        servers = servers_file.json
-        for server_name, server in servers.items():
-            if name in server["software"]:
-                path = server["path"] + "/" + server["software"][name]["copy_path"]
-                cli.simple_wait_fixed_time("Deleting " + path + "...", "Deleted", 1)
-                os.remove(path)
-                servers_rm.append(server_name)
-        for server in servers_rm:
-            servers[server]["software"].pop(name)
-        servers_file.json = servers
-        cli.info("Deleted ALL files and ALL occurrences in server configurations!")
+        progress = cli.progress_bar("Deleting occurrences...")
+        total = len(to_remove)
+        index = 0
+        for rm in to_remove:
+            index = index + 1
+            progress.update_message(f"Deleting in server {rm[1]}", (index / total) * 100)
+            sleep(1)
+            os.remove(rm[0])
+            servers[rm[1]]["software"].pop(name)
+        progress.complete("Deleted all occurrences in servers")
 
-    if name in sources_file.json:
-        sources_file.json.pop(name)
-    all_software.pop(name)
-    software_file.json = all_software
+    if name in sources.json:
+        sources.json.pop(name)
+    software.pop(name)
+    software_file.json = software
 
-    cli.info("Software configurations removed!")
+    cli.simple_wait_fixed_time("Saving data... (CRTL-C to cancel)", "Data saved!", 5)
     sync()
 
 
@@ -146,30 +148,35 @@ def add(file: str):
     all_software = software_file.json
 
     cli.update_sender("ADD")
-    cli.success("Adding " + file + " to the software repository...")  # Doesn't actually do something
+    cli.info(f"Adding {file} to the software repository...")
 
     def ask_name():
         """
         Ask for the name of the software
         :return:
         """
-        result = cli.ask("Please enter the name of the software (e.g waterfall): ", vanish=True)
+        if file.find('.') == -1:  # No . found
+            default = file
+        else:
+            default = file[:file.find('.')]
+        result = cli.ask(f"Enter name (default: {default}): ", vanish=True)
         if result in all_software:
-            cli.fail("This software already exists! Try again.")
+            cli.fail("This name already exists! Try again.")
             return ask_name()
+        if result == "":
+            return default
         return result
 
     name = ask_name()
 
-    identifier = cli.ask("Please enter a human understandable identifier for your software (e.g Proxy / Waterfall): ",
-                         vanish=True)
+    identifier = cli.ask("Enter a short description (e.g waterfall / proxy)", vanish=True)
 
     def ask_severity():
         """
         Ask for severity of software
         :return:
         """
-        result = cli.ask("How severe would any error related to this software be? (0-10): ", vanish=True)
+        result = cli.ask("Enter error severity (0-10): ", vanish=True)
         if result.isdigit():
             result = int(result)
             if 0 <= result <= 10:
@@ -188,33 +195,31 @@ def add(file: str):
         :param version: version to ask for
         :return: valid version object
         """
-        version = cli.ask("Please enter " + version + " version (e.g: 1.17.1): ", vanish=True)
+        version = cli.ask("Please enter " + version + " version (e.g: 1.17.1): ")
         if is_valid(version):
             return Version(version)
-        cli.fail("This is not a valid version! ")
+        cli.fail(f"{version} is not a valid version!")
         return ask_version(version)
 
-    cli.say("Please define the range of compatible versions (includes the entered version)")
+    cli.info("Define the range of compatible versions (includes the entered version)")
     minimum = ask_version("oldest compatible")
     maximum = ask_version("newest compatible")
     range_requirement = VersionRangeRequirement((minimum, maximum))
 
     print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-    cli.info("If you would like to add auto-update, please read \"examples.md\"!")
 
     cli.success("All data collected!")
-    cli.say("To add: ")
-    cli.say("Adding new dependency: " + identifier + " (" + name + ") [" + str(severity) + "]")
-    cli.say("local file: " + file)
-    cli.say("Version requirements: " + range_requirement.string())
+    cli.info("To add: ")
+    cli.info("Adding new dependency: " + identifier + " (" + name + ") [" + str(severity) + "]")
+    cli.info("local file: " + file)
+    cli.info("Version requirements: " + range_requirement.string())
+    cli.warn("If you would like to add auto-update, please read \"examples.md\"!")
 
-    if cli.ask("Is that ok? ").lower() not in ["y", "yes"] and \
-            cli.ask("Are you sure you would like to cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no", ""]:
+    if cli.ask("Add to register? ").lower() not in ["y", "yes"] and \
+            cli.ask("Are you sure you would like to cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no",
+                                                                                                           ""]:
         cli.fail("Aborting")
         sys.exit()
-
-    cli.update_sender("MNG")
-    cli.info("Saving to json...")
 
     all_software[name] = {
         "file": file,
@@ -225,8 +230,8 @@ def add(file: str):
     }
 
     software_file.json = all_software
+    cli.simple_wait_fixed_time("Saving data...", "Data saved!", 1.5, green=True)
     sync()
-    cli.info("If you would like to add auto-update, please read \"examples.md\"!")
 
 
 if __name__ != "__main__":

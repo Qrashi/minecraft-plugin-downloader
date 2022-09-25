@@ -5,7 +5,7 @@ import datetime
 import sys
 from subprocess import run, PIPE
 
-VERSION = "b2.0"
+VERSION = "b2.1"
 COMMIT = "could not get commit. see errors.json"
 
 if __name__ == "__main__":

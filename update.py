@@ -293,6 +293,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
     cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 3, green=True)
     sync()
 
+
 if __name__ == "__main__":
     try:
         main(args.check_all_compatibility, args.redownload, args.skip_dependency_check)

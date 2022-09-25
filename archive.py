@@ -1,9 +1,10 @@
 import argparse
 import datetime
 import sys
+from os.path import exists
 
 import utils.cli as cli
-from singlejson import JSONFile
+from singlejson import sync, load
 
 
 def get_time(timestamp: int) -> str:
@@ -12,7 +13,7 @@ def get_time(timestamp: int) -> str:
     :param timestamp: timestamp to get time from
     :return: formatted time
     """
-    return datetime.datetime.fromtimestamp(timestamp).strftime("%d.%m.%y at %H:%M")
+    return datetime.datetime.fromtimestamp(timestamp).strftime("%d.%m.%y at %H:%M:%S")
 
 
 def main(silent: bool):
@@ -23,20 +24,12 @@ def main(silent: bool):
     """
     cli.update_sender("ARM")
     cli.loading("Accessing archive database & current errors", vanish=True)
-    errors_file, events_file = JSONFile("data/errors.json", default="[]"), JSONFile("data/events.json")
-    archive_info = JSONFile("data/archive/archive.json",
-                            default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
-                                                                                                                  "\""))
+    errors_file, events_file = load("data/errors.json", default=[]), load("data/events.json")
+    archive_info = load("data/archive/archive.json", default={"last": 0, "total": {"errors": 0, "events": 0}, "archives": []})
     last = archive_info.json["last"]
-    if datetime.datetime.now().timestamp() - last < 70:
-        cli.fail("You may only create an archive every 70 seconds in order to")
-        cli.fail("prevent directories with the same name from being generated.")
-        cli.info(f"Please wait {70 - int(datetime.datetime.now().timestamp()) - last} seconds and retry.")
-        sys.exit()
     if len(events_file.json) == 0 and len(errors_file.json) == 0:
         cli.fail("Nothing to archive!")
         sys.exit()
-
     if silent:
         archive(last, int(datetime.datetime.now().timestamp()), silent)
         cli.success("Archive complete!")
@@ -64,10 +57,14 @@ def archive(start: int, end: int, silent: bool):
         if new_name != "":
             dir_name = new_name
 
-    archive_data, archived_errors, archived_events = JSONFile(f"data/archive/{dir_name}/data.json"), JSONFile(
-        f"data/archive/{dir_name}/errors.json"), JSONFile(f"data/archive/{dir_name}/events.json")
-    errors, events = JSONFile("data/errors.json", default="[]"), JSONFile("data/events.json", default="[]")
-    archives_info = JSONFile("data/archive/archive.json")
+    if dir_name in exists(f"data/archive/{dir_name}/data.json"):
+        cli.fail("An archive with the same name already exists!")
+        sys.exit()
+
+    archive_data, archived_errors, archived_events = load(f"data/archive/{dir_name}/data.json"), load(
+        f"data/archive/{dir_name}/errors.json"), load(f"data/archive/{dir_name}/events.json")
+    errors, events = load("data/errors.json", default="[]"), load("data/events.json", default="[]")
+    archives_info = load("data/archive/archive.json")
     nr_errors, nr_events = len(errors.json), len(events.json)
     archive_data.json = {
         "timeframe": {
@@ -81,11 +78,6 @@ def archive(start: int, end: int, silent: bool):
     }
     archived_errors.json = errors.json
     archived_events.json = events.json
-    if not silent:
-        cli.simple_wait_fixed_time("Saving to archive...", "Saved to archive!", 3, vanish=True, green=True)
-    archived_errors.save()
-    archived_events.save()
-    archive_data.save()
     errors.json = []
     events.json = []
     archives_info.json["last"] = end
@@ -93,21 +85,17 @@ def archive(start: int, end: int, silent: bool):
     archives_info.json["total"]["events"] = archives_info.json["total"]["events"] + nr_events
     archives_info.json["archives"].append(dir_name)
     if not silent:
-        cli.simple_wait_fixed_time("Clearing old events and errors", "Errors and events cleared", 3, vanish=True,
-                                   green=True)
-    events.save()
-    errors.save()
-    archives_info.save()
+        cli.simple_wait_fixed_time("Saving data...", "Data saved!", 3, green=True)
+    sync()
 
 
 def recount():
     """
     Recount errors / events in overall database
+    This is just a test to test out the CLI progress indicator... ;)
     :return:
     """
-    archive_info = JSONFile("data/archive/archive.json",
-                            default=str({"last": 0, "total": {"errors": 0, "events": 0}, "archives": []}).replace("\'",
-                                                                                                                  "\""))
+    archive_info = load("data/archive/archive.json", default={"last": 0, "total": {"errors": 0, "events": 0}, "archives": []})
     if len(archive_info.json["archives"]) == 0:
         cli.success("No archives registered, done!")
         sys.exit()
@@ -117,8 +105,8 @@ def recount():
     archives_checked = 0
     for dir_name in archive_info.json["archives"]:
         progress.update_message(f"Counting {dir_name} ({archives_checked}/{archives})")
-        archive_data, archived_errors, archived_events = JSONFile(f"data/archive/{dir_name}/data.json"), JSONFile(
-            f"data/archive/{dir_name}/errors.json"), JSONFile(f"data/archive/{dir_name}/events.json")
+        archive_data, archived_errors, archived_events = load(f"data/archive/{dir_name}/data.json"), load(
+            f"data/archive/{dir_name}/errors.json"), load(f"data/archive/{dir_name}/events.json")
         nr_errors = len(archived_errors.json)
         nr_events = len(archived_events.json)
         archive_data.json["stats"]["errors"] = nr_errors
