@@ -113,7 +113,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         software_objects[software_name] = software
 
     if updated == 0:
-        progress.complete(f"Checked for {total_software}  updates")
+        progress.complete(f"Checked for {total_software} software updates")
     else:
         progress.complete(f"Found {updated} updates, checked {total_software}")
 
@@ -278,7 +278,6 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         updated_servers = updated_servers + 1 if changed else updated_servers
         servers.json[server_name] = server_info
 
-    cli.update_sender("END")
     context.failure_severity = 10
     context.task = "finalizing"
     context.name = "main"
@@ -287,6 +286,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
     else:
         progress.complete(f"Checked {len(servers.json)} servers for updates.")
 
+    cli.update_sender("END")
     cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 1.5, green=True)
     sync()
 
