@@ -271,7 +271,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
                 # Software IS compatible, copy is allowed > copy
                 context.task = "copying " + dependency
                 progress.update_message(f"Updating {server_name} dependencies - {dependency}")
-                software.copy(server_name, f"[{dep_iter}/{dependencies_total}]")
+                software.copy(server_name)
                 changed = True
                 dependencies_updated = dependencies_updated + 1
 

@@ -5,9 +5,9 @@ from time import sleep
 import utils.cli as cli
 from utils.file_defaults import CONFIG
 from singlejson import load, sync
-from utils.sha244 import get_hash
 from utils.versions import is_valid, Version, VersionRangeRequirement
 from utils.context_manager import context
+from utils.sha244 import get_hash
 
 
 def main():
@@ -21,17 +21,21 @@ def main():
     cli.say("Starting, scanning software directory...")
 
     all_software = load("data/software.json", default="{}").json
+    config = load("data/config.json", default=CONFIG).json
 
-    software_file_list = []
-    for software in all_software.values():
-        software_file_list.append(software["file"])
+    software_file_list = {}
+    for software, info in all_software.items():
+        software_file_list[info["file"]] = software
 
     detected_files = {}
     files = []
-    with os.scandir(load("data/config.json", default=CONFIG).json["sources_folder"]) as directory:
+    with os.scandir(config["sources_folder"]) as directory:
         for file in directory:
             if not file.name.endswith(".tmp"):
                 files.append(file.name)
+            if file in software_file_list:
+                if get_hash(config["sources_folder"] + "/" + file) != all_software[software_file_list[file]]["hash"]:
+                    detected_files[file] = "changed"
 
     for file in files:
         if file not in software_file_list:
@@ -42,17 +46,17 @@ def main():
             detected_files[file] = "removed"
 
     if len(detected_files) == 0:
-        cli.success("Scan complete, could not find any new / deleted files!")
-        cli.warn("Please put / remove the new software into the software folder!")
-        sys.exit()
+        cli.success("Scan complete, could not find any new / deleted / changed files!")
+        cli.warn("You may now select software to change:")
+        for file in software_file_list:
+            detected_files[file] = "change information"
 
-    cli.success("Found " + str(len(detected_files)) + " changed files.")
     if len(detected_files) == 1:
         # We already know which software to select
         file = list(detected_files)[0]
         operation = detected_files[file]
     else:
-        cli.warn("Detected multiple new files. Please choose from the list: ")
+        cli.warn("Please choose which file / software to edit:")
         for detected_file, operation in detected_files.items():
             print("- " + detected_file + " (" + operation + ")")
 
@@ -68,8 +72,82 @@ def main():
 
     if operation == "added":
         add(file)
-    else:
+    elif operation == "removed":
         remove(file)
+    else:
+        change(file, software_file_list[file])
+
+
+def change(file: str, software: str):
+    """
+    Change software information
+    :param file: File to change
+    :param software: software identifier of software to change
+    :return:
+    """
+    software_file = load("data/software.json", default="{}")
+
+    cli.info("Selected " + file + ".")
+
+    def ask_action():
+        print("\n" * 30)
+        cli.info("COMPATIBILITY - change compatibility")
+        cli.info("SEVERITY - change severity")
+        cli.info("IDENTIFIER - change identifier")
+        cli.info("SAVE - save file")
+        res = cli.ask("Specify action: ")
+        if res == "COMPATIBILITY":
+            cli.info("Setting new compatibility.")
+
+            def ask_compatibility(version: str) -> Version:
+                """
+                Ask for new compatible version
+                :param version: version (lowest, highest)
+                :return: A Version
+                """
+                ver = cli.ask(f"Enter {version} version: ")
+                if is_valid(ver):
+                    return Version(ver)
+                else:
+                    cli.fail(version + " is not a valid version!")
+                    return ask_compatibility(version)
+
+            oldest = ask_compatibility("oldest compatible")
+            newest = ask_compatibility("newest compatible")
+            new_compat = VersionRangeRequirement((oldest, newest))
+            software_file.json[software]["requirements"] = new_compat.dict()
+            cli.info("New software " + new_compat.string())
+            ask_action()
+        elif res == "SEVERITY":
+            cli.info("Setting new severity.")
+
+            def ask_severity() -> int:
+                """
+                Ask for new severity
+                :return:
+                """
+                new_severity = cli.ask("Enter new severity: ")
+                if new_severity.isdigit():
+                    new_severity = int(new_severity)
+                    if 0 <= new_severity <= 10:
+                        return new_severity
+
+                cli.fail("Please enter a number between 0 and 10!")
+                return ask_severity()
+
+            severity = ask_severity()
+            software_file.json[software]["severity"] = severity
+            cli.info("New severity: " + str(severity))
+            ask_action()
+        elif res == "IDENTIFIER":
+            cli.info("Setting new identifier.")
+            new_identifier = cli.ask("Please enter new identifier: ")
+            software_file.json[software]["identifier"] = new_identifier
+            cli.info("New identifier: " + new_identifier)
+            ask_action()
+        else:
+            cli.simple_wait_fixed_time("Saving changes... (CRTL-C to abort)", "Saved!", 3, green=True)
+            sync()
 
 
 def remove(file: str):
@@ -216,8 +294,7 @@ def add(file: str):
     cli.warn("If you would like to add auto-update, please read \"examples.md\"!")
 
     if cli.ask("Add to register? ").lower() not in ["y", "yes"] and \
-            cli.ask("Are you sure you would like to cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no",
-                                                                                                           ""]:
+            cli.ask("Confirm cancel (n, no to \"cancel cancel\") ").lower() not in ["n", "no", ""]:
         cli.fail("Aborting")
         sys.exit()
 

@@ -83,11 +83,10 @@ class Software:
         self.hash = new_hash
         return False
 
-    def copy(self, server: str, dependency_number: str) -> bool:
+    def copy(self, server: str) -> bool:
         """
         Copies dependency into the server if possible.
         :param server: Name of the server
-        :param dependency_number: The "x/y" to display at the end of the progress bar
         :return bool: If the server was updated
         """
         context.failure_severity = self.severity
