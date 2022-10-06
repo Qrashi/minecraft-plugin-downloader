@@ -92,7 +92,7 @@ def change(file: str, software: str):
 
     def ask_action():
         print("\n" * 30)
-        cli.info("COMPATIBILITY - change compatibility (" + + VersionRangeRequirement(software_file.json[software]["requirements"]).short_string() + ")")
+        cli.info("COMPATIBILITY - change compatibility (" + VersionRangeRequirement(software_file.json[software]["requirements"]).short_string() + ")")
         cli.info(f"SEVERITY - change severity")
         cli.info("IDENTIFIER - change identifier")
         cli.info("SAVE - save file")
