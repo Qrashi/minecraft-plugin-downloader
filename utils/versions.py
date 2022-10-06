@@ -227,7 +227,14 @@ class VersionRangeRequirement:
         Generate a human-readable string
         :return: human-readable string
         """
-        return "Requires a version between " + self.minimum.string() + " and " + self.maximum.string()
+        return f"Requires a version between {self.minimum.string()} and {self.maximum.string()}"
+
+    def short_string(self):
+        """
+        Generate a short human-readable string
+        :return: human-readable string
+        """
+        return f"{self.minimum.string()} - {self.maximum.string()}"
 
     def dict(self):
         """

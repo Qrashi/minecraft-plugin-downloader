@@ -92,13 +92,14 @@ def change(file: str, software: str):
 
     def ask_action():
         print("\n" * 30)
-        cli.info("COMPATIBILITY - change compatibility")
-        cli.info("SEVERITY - change severity")
+        cli.info("COMPATIBILITY - change compatibility (" + + VersionRangeRequirement(software_file.json[software]["requirements"]).short_string() + ")")
+        cli.info(f"SEVERITY - change severity")
         cli.info("IDENTIFIER - change identifier")
         cli.info("SAVE - save file")
         res = cli.ask("Specify action: ")
         if res == "COMPATIBILITY":
             cli.info("Setting new compatibility.")
+            cli.info("Current compatibility: " + VersionRangeRequirement(software_file.json[software]["requirements"]).short_string())
 
             def ask_compatibility(version: str) -> Version:
                 """
@@ -121,6 +122,7 @@ def change(file: str, software: str):
             ask_action()
         elif res == "SEVERITY":
             cli.info("Setting new severity.")
+            cli.info("Current severity: " + str(software_file.json[software]["severity"]))
 
             def ask_severity() -> int:
                 """
@@ -142,6 +144,7 @@ def change(file: str, software: str):
             ask_action()
         elif res == "IDENTIFIER":
             cli.info("Setting new identifier.")
+            cli.info("Current identifier: " + str(software_file.json[software]["identifier"]))
             new_identifier = cli.ask("Please enter new identifier: ")
             software_file.json[software]["identifier"] = new_identifier
             cli.info("New identifier: " + new_identifier)
@@ -151,6 +154,7 @@ def change(file: str, software: str):
             sync()
 
     ask_action()
+
 
 def remove(file: str):
     """
