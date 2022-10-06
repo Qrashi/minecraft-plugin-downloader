@@ -18,6 +18,7 @@ def main():
     context.task = "managing dependencies"
     context.failure_severity = 9
     context.name = "manager"
+    cli.update_sender("MAN")
     cli.say("Starting, scanning software directory...")
 
     all_software = load("data/software.json", default="{}").json
@@ -149,6 +150,7 @@ def change(file: str, software: str):
             cli.simple_wait_fixed_time("Saving changes... (CRTL-C to abort)", "Saved!", 3, green=True)
             sync()
 
+    ask_action()
 
 def remove(file: str):
     """
