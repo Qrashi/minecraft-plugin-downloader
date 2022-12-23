@@ -204,7 +204,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
                                 continue
                             changed = True
                             if server_info["version"]["type"] == "version":  # Save version as string
-                                server_info[server_name]["version"]["value"] = version.string()
+                                server_info["version"]["value"] = version.string()
                             else:
                                 version_access = FileAccessField(server_info["version"])
                                 version_access.update(version.string())
