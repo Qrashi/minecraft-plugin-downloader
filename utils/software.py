@@ -62,11 +62,12 @@ class Software:
         """
         return self.hash != get_hash(other)
 
-    def retrieve_newest(self, check: bool, force_retrieve: bool) -> bool:
+    def retrieve_newest(self, check: bool, force_retrieve: bool, software_data) -> bool:
         """
         Retrieves the newest version from the internet if possible
         :param check: bool; Always fetch compatibility
         :param force_retrieve: bool; Always download the newest build
+        :param software_data: The config data corresponding to the software
         :return bool: Dependency was updated in some way
         """
         context.failure_severity = self.severity
@@ -74,6 +75,7 @@ class Software:
         if self.has_source():
             updated = self.source.update(check, force_retrieve)
             self.hash = self.get_hash()
+            self.requirements = VersionRangeRequirement(software_data["requirements"])
             return updated
         new_hash = self.get_hash()
         if new_hash != self.hash:

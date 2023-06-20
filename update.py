@@ -107,7 +107,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         if skip_dependency_check:
             was_updated = False
         else:
-            was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download))
+            was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download), software_data)
         updated = updated + 1 if was_updated else updated
         software_data["hash"] = software.hash
         software_objects[software_name] = software
