@@ -94,7 +94,7 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
     context.task = "checking for new software updates"
     cli.update_sender("SFW")
     check_re_download = re_download is not None
-    update_all = False if check_re_download else re_download[0].lower() == "add"
+    update_all = False if check_re_download else re_download[0].lower() == "all"
     progress = cli.progress_bar("Checking for newest versions...")
 
     total_software = len(all_software)
