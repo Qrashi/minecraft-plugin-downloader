@@ -229,7 +229,7 @@ class Source:
                    software=self.name, additional=f"URL: {url}")
             return False
         total_length = response.headers.get('content-length')
-        progress = cli.progress_bar(f"Downloading {self.name} from {self.server}", vanish=True)
+        progress = cli.progress_bar(f"Downloading {self.name} from {self.server}")
 
         with open(SOURCES_DIR + "/" + self.file + ".tmp", "wb") as temporary_file:
             if total_length is None:
@@ -361,7 +361,7 @@ class Source:
                    additional="Not deleted: " + self.file + ".tmp", exception=e, software=self.name)
             return True
 
-        progress.complete("Updated " + self.name)
+        progress.complete("Updated " + self.name, vanish=True)
         return True
 
     def update(self, check: bool, force_retrieve: bool) -> bool:

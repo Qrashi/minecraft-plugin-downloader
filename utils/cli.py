@@ -262,12 +262,11 @@ def simple_wait_fixed_time(message: str, end_message: str, time: Union[int, floa
         print_pretty(Fore.LIGHTYELLOW_EX, "✔", end_message, vanish)
 
 
-def progress_bar(message, progress: int = 0, vanish: bool = False):
+def progress_bar(message, progress: int = 0):
     """
     Return a progress bar object
     :param progress: Initial progress
     :param message: Starting message to display
-    :param vanish: Weather or not the message should vanish
     :return: A ProgressBar object
     """
 
@@ -314,7 +313,7 @@ def progress_bar(message, progress: int = 0, vanish: bool = False):
             self.show()
 
         @staticmethod
-        def fail(fail_message: str, ):
+        def fail(fail_message: str):
             """
             End the ProgressBar with a failed execution indicator
             :param fail_message: Message to display
@@ -324,10 +323,11 @@ def progress_bar(message, progress: int = 0, vanish: bool = False):
             # A failure will always stay in CLI
 
         @staticmethod
-        def complete(complete_message: str, green: bool = False):
+        def complete(complete_message: str, green: bool = False, vanish: bool = False):
             """
             Complete a task
-            :param complete_message: Message to     display
+            :param vanish: weather the message should vanish
+            :param complete_message: Message to display
             :param green: Wetter to use green color coding
             :return:
             """

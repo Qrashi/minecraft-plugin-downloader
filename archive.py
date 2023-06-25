@@ -100,7 +100,7 @@ def recount():
         cli.success("No archives registered, done!")
         sys.exit()
     total = {"events": 0, "errors": 0}
-    progress = cli.progress_bar("Counting errors", vanish=True)
+    progress = cli.progress_bar("Counting errors")
     archives = len(archive_info.json["archives"])
     archives_checked = 0
     for dir_name in archive_info.json["archives"]:
@@ -113,7 +113,7 @@ def recount():
         archive_data.json["stats"]["events"] = nr_events
         total["events"] = total["events"] + nr_events
         total["errors"] = total["errors"] + nr_errors
-    progress.complete("Checked all archives!")
+    progress.complete("Checked all archives!", vanish=True)
     errors, events = total["errors"], total["events"]
     cli.success(f"Count complete: {errors} errors & {events} events!")
     archive_info.json["total"]["errors"], archive_info.json["total"]["events"] = errors, events

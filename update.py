@@ -130,7 +130,7 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
         context.failure_severity = 10
         context.task = "getting information"
         prog = (servers_iter / servers_total) * 100
-        progress.update_message("Updating " + server_name, prog)
+        progress.update_message(f"Updating {server_name} [{servers_iter}/{servers_total}]", prog)
         changed = False
         # Get the server version
         if server_info["version"]["type"] == "version":
@@ -274,6 +274,8 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
                 software.copy(server_name)
                 changed = True
                 dependencies_updated = dependencies_updated + 1
+
+        progress.complete(f"Updated {server_name} [{dep_iter}/{dependencies_total}]", vanish=True)
 
         updated_servers = updated_servers + 1 if changed else updated_servers
         servers.json[server_name] = server_info
