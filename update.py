@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 from subprocess import run, PIPE
-from typing import Dict
+from typing import Dict, List
 
 from singlejson import load, sync
 
@@ -20,7 +20,7 @@ from utils.tasks import execute
 from utils.versions import Version, check_game_versions
 
 
-def main(check_all_compatibility: bool, re_download: str, skip_dependency_check: bool):
+def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_check: bool):
     """
     Execute the main update.
     :param check_all_compatibility: Weather to check all software for updates
@@ -93,7 +93,8 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
     # Update software (fetch sources)
     context.task = "checking for new software updates"
     cli.update_sender("SFW")
-    check_re_download = not re_download == "none"
+    check_re_download = re_download is not None
+    update_all = False if check_re_download else re_download[0].lower() == "add"
     progress = cli.progress_bar("Checking for newest versions...")
 
     total_software = len(all_software)
@@ -102,12 +103,14 @@ def main(check_all_compatibility: bool, re_download: str, skip_dependency_check:
 
     for software_name, software_data in all_software.items():
         checked = checked + 1
-        progress.update_message(f"Checking {software_name}...", done=(checked / total_software) * 100)
+        progress.update_message(f"Checking {software_name} [{checked}/{total_software}]",
+                                done=(checked / total_software) * 100)
         software = Software(software_data, software_name)
         if skip_dependency_check:
             was_updated = False
         else:
-            was_updated = software.retrieve_newest(check_all_compatibility, (check_re_download and software.name == re_download), software_data)
+            was_updated = software.retrieve_newest(check_all_compatibility,
+                                                   (update_all or (check_re_download and software.name in re_download)), software_data)
         updated = updated + 1 if was_updated else updated
         software_data["hash"] = software.hash
         software_objects[software_name] = software
