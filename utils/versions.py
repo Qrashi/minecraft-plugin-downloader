@@ -30,6 +30,10 @@ def is_valid(version: str) -> bool:
     """
 
     version = str(version)
+    if "a" in version or "w" in version:
+        cli.fail(f"Malformed version retrieved! {version} is a snapshot version!")
+        report(9, "version integrity checker", f"{version} is a snapshot {context.name} - {context.task}")
+        return False
     if len(version) > 7:  # Longer than 1.17.77 (6)
         cli.fail(f"Malformed version retrieved! {version} is too long!")
         report(9, "version integrity checker", f"{version} is too long (max 6)! {context.name} - {context.task}")
