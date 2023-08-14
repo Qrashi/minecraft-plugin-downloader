@@ -23,6 +23,7 @@ versions = load("data/versions.json", default=VERSIONS).json
 def report_malformed_version(version: str, verbose: bool = True) -> bool:
     """
     Report a malformed version (check if the malformed version should be reported)
+    :param verbose:
     :param version: Version to check -& report
     :return: if version is not malformed
     """
@@ -37,14 +38,14 @@ def report_malformed_version(version: str, verbose: bool = True) -> bool:
         return True
     if not verbose:
         return False
-    if is_valid(version[:4]) or report_malformed_version(version[:6], verbose=False):
+    if is_valid(version[:4], verbose=False) or report_malformed_version(version[:6], verbose=False):
         return True
     cli.fail(f"Malformed version \"{version}\" retrieved!")
     report(9, "version integrity checker", f"{version} is malformed! {context.name} - {context.task}")
     return False
 
 
-def is_valid(version: str) -> bool:
+def is_valid(version: str, verbose: bool = True) -> bool:
     """
     Check if a string version description is valid
     :param version: Version to check for validity
@@ -53,13 +54,13 @@ def is_valid(version: str) -> bool:
 
     version = str(version)
     if len(version) > 7:  # Longer than 1.17.77 (6)
-        report_malformed_version(version)
+        if verbose: report_malformed_version(version)
         return False
     if len(version) < 3:  # Shorter than 1.1 (3)#
-        report_malformed_version(version)
+        if verbose: report_malformed_version(version)
         return False
     if version[:2] != "1.":  # Minecraft 2.x when?
-        report_malformed_version(version)
+        if verbose: report_malformed_version(version)
         return False
     return True
 
