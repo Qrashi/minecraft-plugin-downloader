@@ -35,10 +35,10 @@ def report_malformed_version(version: str, verbose: bool = True) -> bool:
     if len(version) == 11 and "-pre" in version:
         # prerelease version
         return True
-    if is_valid(version[:4]) or report_malformed_version(version[:6], verbose=False):
-        return True
     if not verbose:
         return False
+    if is_valid(version[:4]) or report_malformed_version(version[:6], verbose=False):
+        return True
     cli.fail(f"Malformed version \"{version}\" retrieved!")
     report(9, "version integrity checker", f"{version} is malformed! {context.name} - {context.task}")
     return False
