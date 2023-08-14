@@ -20,6 +20,30 @@ from utils.static_info import DAYS_SINCE_EPOCH
 versions = load("data/versions.json", default=VERSIONS).json
 
 
+def report_malformed_version(version: str, verbose: bool = True) -> bool:
+    """
+    Report a malformed version (check if the malformed version should be reported)
+    :param version: Version to check -& report
+    :return: if version is not malformed
+    """
+    if "a" in version and "w" in version and len(version) == 6 and version[0].isdigit() and int(version[0]) < 4:
+        # snapshot version
+        return True
+    if len(version) == 10 and "-rc" in version:
+        # release candidate version
+        return True
+    if len(version) == 11 and "-pre" in version:
+        # prerelease version
+        return True
+    if is_valid(version[:4]) or report_malformed_version(version[:6], verbose=False):
+        return True
+    if not verbose:
+        return False
+    cli.fail(f"Malformed version \"{version}\" retrieved!")
+    report(9, "version integrity checker", f"{version} is malformed! {context.name} - {context.task}")
+    return False
+
+
 def is_valid(version: str) -> bool:
     """
     Check if a string version description is valid
@@ -29,16 +53,13 @@ def is_valid(version: str) -> bool:
 
     version = str(version)
     if len(version) > 7:  # Longer than 1.17.77 (6)
-        cli.fail(f"Malformed version retrieved! {version} is too long!")
-        report(9, "version integrity checker", f"{version} is too long (max 6)! {context.name} - {context.task}")
+        report_malformed_version(version)
         return False
     if len(version) < 3:  # Shorter than 1.1 (3)#
-        cli.fail(f"Malformed version retrieved! {version} is too short!")
-        report(9, "version integrity checker", f"{version} is too short (min 3)! {context.name} - {context.task}")
+        report_malformed_version(version)
         return False
     if version[:2] != "1.":  # Minecraft 2.x when?
-        cli.fail(f"Malformed version retrieved! {version} is does not start with 1.xxx")
-        report(9, "version integrity checker", f"{version} does not start with 1.xxx! {context.name} - {context.task}")
+        report_malformed_version(version)
         return False
     return True
 
@@ -310,9 +331,9 @@ def check_game_versions():
         versions["last_check"] = DAYS_SINCE_EPOCH
         versions["current_version"] = highest.string()
         if updated:
-            report_event("Game version checker", f"Retrieved new game versions. New highest version: {highest.string()}")
+            report_event("Game version checker",
+                         f"Retrieved new game versions. New highest version: {highest.string()}")
             if current_highest.matches(highest):
                 cli.success("Fetched new minecraft version(s)!")
             else:
                 cli.success(f"Fetched new minecraft version(s): {highest.string()}")
-
