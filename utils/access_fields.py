@@ -1,12 +1,14 @@
 """
 This file handles AccessFields
 """
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Tuple
 
 from utils.errors import report
 from utils.context_manager import context
 from utils.file_defaults import CONFIG
 from singlejson import load
+
+from utils.versions import Version
 from utils.web import get_managed
 
 
@@ -188,6 +190,70 @@ class WebAccessField:
                        additional=f"task data: {task}",
                        software=context.name)
                 return WebAccessFieldError("task \"return\" malformed, missing \"value\"!")
+            if task["type"] == "get_by" or task["type"] == "store_by":
+                if not all(x in list(task) for x in ["url", "path", "sort_by", "attribute", "sort_type"]):
+                    report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
+                           "malformed " + task["type"] + " task. \"url\", \"path\", \"sort_by\", \"attribute\" or \"sort_type\" is missing",
+                           additional=f"task data: {task}",
+                           software=context.name)
+                    return WebAccessFieldError(
+                        "malformed \"" + task["type"] + "\" task, missing \"url\", \"path\", \"sort_by\", \"attribute\" or \"sort_type\"!")
+                if task["type"] == "store_by" and "destination" not in task:
+                    report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
+                           "malformed store_by task. \"destination\" is missing",
+                           additional=f"task data: {task}",
+                           software=context.name)
+                    return WebAccessFieldError(
+                        "malformed \"store_by\" task, missing \"destination\"!")
+                if task["sort_type"] not in ["game_version", "number", "release_type"]:
+                    report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
+                           "malformed " + task["type"] + " task. \"sort_type\" is unknown (must be \"game_version\", \"number\" or \"release_type\"",
+                           additional=f"task data: {task}",
+                           software=context.name)
+                    return WebAccessFieldError(
+                        "malformed \"" + task["type"] + "\" task, \"sort_type\" is unknown (see errors.json)!")
+                if task["sort_type"] == "release_type" and "match" not in task:
+                    report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
+                           "malformed " + task["type"] + " task. \"match\" is missing",
+                           additional=f"task data: {task}",
+                           software=context.name)
+                    return WebAccessFieldError(
+                        "malformed \"" + task["type"] + "\" task, missing \"match\"!")
+                task_headers = headers
+                if "headers" in task:
+                    task_headers = task["headers"]  # Task headers should only be used for THIS task
+                result = get_managed(self.replace(task["url"]), task_headers)
+                if isinstance(result, Exception):
+                    return result
+                sortable_data = uri_access(task["path"], result)
+                if type(sortable_data) is not list:
+                    report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
+                           "error while executing " + task["type"] + " task. list of objects specified by path is not a list",
+                           additional=f"task data: {task}",
+                           software=context.name)
+                    return WebAccessFieldError(
+                        "error while executing \"" + task["type"] + "\" task. list of objects specified by path is not a list")
+                current_highest: Tuple[int, Union[Version, int]] = (0, Version("1.0") if task["sort_type"] == "game_version" else 0)
+                for object_index, sortable_object in enumerate(sortable_data):
+                    if task["sort_type"] == "game_version":
+                        current = Version(uri_access(task["sort_by"], sortable_object))
+                        if current.is_higher(current_highest[1]) or current_highest[1].matches(Version("1.0")):
+                            current_highest = (object_index, current)
+                        continue
+                    if task["sort_type"] == "number":
+                        current = int(uri_access(task["sort_by"], sortable_object))
+                        if current > current_highest[1] or current_highest[1] == 0:
+                            current_highest = (object_index, current)
+                        continue
+                    if uri_access(task["sort_by"], sortable_object) == task["match"]:
+                        current_highest = (object_index, 0)
+                        break
+                result = uri_access(task["attribute"], sortable_data[current_highest[0]])
+                if task["type"] == "store_by":
+                    destination = task["destination"]
+                    self.replaceable[f"%{destination}%"] = result
+                    return
+                return result
         if requres_return:
             report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
                    "could not complete WebAccesField tasks - no return or get_return task! cannot set value!",

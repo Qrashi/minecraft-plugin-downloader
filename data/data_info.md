@@ -74,6 +74,25 @@ This is a little documentation for the data structures used in these scripts:
             * return
                 Return a compiled string
             value: "string to return"    
+            
+            * get_by / store_by
+                Get / store the correct attribute of an object with a version attribute.
+                If you have relevant data in a list and one of the attributes of the data is the game version,
+                this task can retrieve an attribute of this data from the newest game version   
+            url: "url",
+            path: {URIAccessField to retrieve the list of data} (point to this list[{"version": "1.12", "build": 123}, {"version": "1.13", "build": 156}]),     
+            sort_by: {URIAccessField to retrieve the version, relative to an list element} (would be ["version"] in the prev. example),
+            attribute: {URIAccessField to data that should be returned} (would be ["build"] in the prev. example),
+            sort_type: what to sort by
+                * "game_version": return the object with the highest game version
+                * "number": return the object with the highest number (e.g build number)
+                * "release_type": return the FIRST list object that has the correct attribute specified with "match" (see below) 
+                    
+            match: only used for sort_type "release_type", what release_type to look for (what the sort_by attribute should match with)
+            headers: {optional},
+            destination: Where to store the data to (look under "get_store"), only required when using store_by_newest task.    
+
+                    
         
             * get_return:
                 Get information from the web and return it (for example return newest build ID)
