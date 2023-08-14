@@ -30,10 +30,6 @@ def is_valid(version: str) -> bool:
     """
 
     version = str(version)
-    if "a" in version or "w" in version:
-        cli.fail(f"Malformed version retrieved! {version} is a snapshot version!")
-        report(9, "version integrity checker", f"{version} is a snapshot {context.name} - {context.task}")
-        return False
     if len(version) > 7:  # Longer than 1.17.77 (6)
         cli.fail(f"Malformed version retrieved! {version} is too long!")
         report(9, "version integrity checker", f"{version} is too long (max 6)! {context.name} - {context.task}")
@@ -42,6 +38,8 @@ def is_valid(version: str) -> bool:
         cli.fail(f"Malformed version retrieved! {version} is too short!")
         report(9, "version integrity checker", f"{version} is too short (min 3)! {context.name} - {context.task}")
         return False
+    if "a" in version or "w" in version:
+        return True  # is snapshot version
     if version[:2] != "1.":  # Minecraft 2.x when?
         cli.fail(f"Malformed version retrieved! {version} is does not start with 1.xxx")
         report(9, "version integrity checker", f"{version} does not start with 1.xxx! {context.name} - {context.task}")
@@ -57,6 +55,8 @@ def from_string(version: str) -> tuple[str, str]:
     """
     version = version.replace("-pre", "")
     if is_valid(version):
+        if "a" in version or "w" in version:
+            return "1", "0"
         if len(version) <= 3:
             major = version[2]  # We only take the 9 from 1.9
             if len(version) > 3:  # Has minor version because major is at least (1.9)
