@@ -23,5 +23,8 @@ CONFIG = {
 VERSIONS = {
     "current_version": "1.0",
     "last_check": 0,
-    "versions": []
+    "versions": [],
+    "known_malformed_versions": [
+      "3D Shareware v1.34"
+    ]
 }

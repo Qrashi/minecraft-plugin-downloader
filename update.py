@@ -13,7 +13,7 @@ from utils.context_manager import context
 from utils.dict_utils import enabled
 from utils.errors import report
 from utils.events import report as report_event
-from utils.file_defaults import CONFIG
+from utils.file_defaults import CONFIG, VERSIONS
 from utils.software import Software
 from utils.static_info import DAYS_SINCE_EPOCH
 from utils.tasks import execute
@@ -53,6 +53,14 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
         cli.fail("Until then, you will not be able to use this program.")
         cli.info("You may delete your current config to generate a new (valid) one.")
         sys.exit()
+
+    if config["config_version"] == 1:
+        cli.info("updating configurations...")
+        versions = load("data/versions.json", default=VERSIONS).json
+        if "known_malformed_versions" not in versions:
+            versions["known_malformed_versions"] = VERSIONS["known_malformed_versions"]
+        config["config_version"] = 2
+        cli.success("configurations updated to version 2.")
 
     context.task = "checking for git-updates"
     if config["git_auto_update"]:

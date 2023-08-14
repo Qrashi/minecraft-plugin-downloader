@@ -27,7 +27,9 @@ def report_malformed_version(version: str, verbose: bool = True) -> bool:
     :param version: Version to check -& report
     :return: if version is not malformed
     """
-    if "a" in version and "w" in version and len(version) == 6 and version[0].isdigit() and int(version[0]) < 4:
+    if version in versions["known_malformed_versions"]:
+        return True
+    if "w" in version and len(version) == 6 and version[0].isdigit() and int(version[0]) < 4:
         # snapshot version
         return True
     if len(version) == 10 and "-rc" in version:
