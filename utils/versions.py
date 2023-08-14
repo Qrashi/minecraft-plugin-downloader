@@ -28,6 +28,8 @@ def is_valid(version: str) -> bool:
     """
 
     version = str(version)
+    if "-rc" in version:
+        return True # is release candidate version
     if len(version) > 7:  # Longer than 1.17.77 (6)
         cli.fail(f"Malformed version retrieved! {version} is too long!")
         report(9, "version integrity checker", f"{version} is too long (max 6)! {context.name} - {context.task}")
@@ -53,7 +55,7 @@ def from_string(version: str) -> tuple[str, str]:
     """
     version = version.replace("-pre", "")
     if is_valid(version):
-        if "a" in version or "w" in version:
+        if "a" in version or "w" in version or "-rc" in version:
             return "1", "0"
         if len(version) <= 3:
             major = version[2]  # We only take the 9 from 1.9

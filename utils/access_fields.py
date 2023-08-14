@@ -205,7 +205,7 @@ class WebAccessField:
                            software=context.name)
                     return WebAccessFieldError(
                         "malformed \"store_by\" task, missing \"destination\"!")
-                if task["sort_type"] not in ["game_version", "number", "release_type"]:
+                if task["sort_type"] not in ["game_version", "number", "release_type", "first_release"]:
                     report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
                            "malformed " + task["type"] + " task. \"sort_type\" is unknown (must be \"game_version\", \"first_release\", \"number\" or \"release_type\"",
                            additional=f"task data: {task}",
