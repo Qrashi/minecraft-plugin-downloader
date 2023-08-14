@@ -153,8 +153,12 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
                     version_iter = server_version
                     higher_versions = []
                     while not version_iter.matches(current_game_version):
-                        version_iter = version_iter.get_next_minor()
-                        higher_versions.append(version_iter)
+                        higher_version = version_iter.get_next_minor()
+                        if higher_version.matches(version_iter):
+                            # highest version already reached / server uses higher version than in database
+                            break
+                        higher_versions.append(higher_version)
+                        version_iter = higher_version
                     for version in higher_versions:
                         context.task = "auto-updating server, checking " + version.string()
                         if not version.string() in server_info["auto_update"]["blocking"]:
@@ -268,8 +272,7 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
             context.task = "updating " + dependency
             if not server_info["software"][dependency]["enabled"]:
                 continue
-            if software.needs_update(server_info["path"] + info["copy_path"]) and server_version.fulfills(
-                    software.requirements):
+            if server_version.fulfills(software.requirements) and software.needs_update(server_info["path"] + info["copy_path"]):
                 # Skip update if no update happened
                 # Software IS compatible, copy is allowed > copy
                 context.task = "copying " + dependency
@@ -300,7 +303,8 @@ if __name__ == "__main__":
     try:
         main(args.check_all_compatibility, args.redownload, args.skip_dependency_check)
     except KeyboardInterrupt:
-        cli.fail("Aborted, no data saved!")
+        cli.fail("operation aborted, no data saved!")
+        cli.fail(f"{context.name} - {context.task}")
         sys.exit()
     except Exception as e:
         if not isinstance(e, KeyboardInterrupt):
