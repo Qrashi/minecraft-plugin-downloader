@@ -87,12 +87,12 @@ This is a little documentation for the data structures used in these scripts:
                 * "game_version": return the object with the highest game version
                 * "number": return the object with the highest number (e.g build number)
                 * "release_type": return the FIRST list object that has the correct attribute specified with "match" (see below) 
-                    
+                * "first_release": return the FIRST list object that is not a snapshot type        
+        
             match: only used for sort_type "release_type", what release_type to look for (what the sort_by attribute should match with)
             headers: {optional},
             destination: Where to store the data to (look under "get_store"), only required when using store_by_newest task.    
-
-                    
+ 
         
             * get_return:
                 Get information from the web and return it (for example return newest build ID)

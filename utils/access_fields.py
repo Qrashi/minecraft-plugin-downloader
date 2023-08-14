@@ -207,7 +207,7 @@ class WebAccessField:
                         "malformed \"store_by\" task, missing \"destination\"!")
                 if task["sort_type"] not in ["game_version", "number", "release_type"]:
                     report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
-                           "malformed " + task["type"] + " task. \"sort_type\" is unknown (must be \"game_version\", \"number\" or \"release_type\"",
+                           "malformed " + task["type"] + " task. \"sort_type\" is unknown (must be \"game_version\", \"first_release\", \"number\" or \"release_type\"",
                            additional=f"task data: {task}",
                            software=context.name)
                     return WebAccessFieldError(
@@ -244,6 +244,11 @@ class WebAccessField:
                         current = int(uri_access(task["sort_by"], sortable_object))
                         if current > current_highest[1] or current_highest[1] == 0:
                             current_highest = (object_index, current)
+                        continue
+                    if task["sort_type"] == "first_release":
+                        if not Version(uri_access(task["sort_by"], sortable_object)).matches(Version("1.0")): # Not a snapshot
+                            current_highest = (object_index, 0)
+                            break
                         continue
                     if uri_access(task["sort_by"], sortable_object) == task["match"]:
                         current_highest = (object_index, 0)
