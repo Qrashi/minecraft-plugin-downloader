@@ -11,9 +11,7 @@ from typing import Union, Dict, Tuple
 
 from singlejson import load, sync
 import utils.cli as cli
-from utils.access_fields import WebAccessField
 from utils.context_manager import context
-from utils.dict_utils import enabled
 from utils.errors import report
 from utils.events import report as report_event
 from utils.file_defaults import CONFIG, VERSIONS
@@ -261,6 +259,7 @@ def check_game_versions():
     Check for new game versions
     :return:
     """
+    from utils.access_fields import WebAccessField
     context.task = "checking for new game versions"
     context.failure_severity = 3
     context.name = "main"
