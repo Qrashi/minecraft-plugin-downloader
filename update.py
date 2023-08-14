@@ -46,7 +46,7 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
     config = load("data/config.json", default=CONFIG).json
 
     context.task = "updating configurations"
-    if "config_version" not in config and config["config_version"] < 1:
+    if "config_version" not in config or config["config_version"] < 1:
         cli.fail("A lot of breaking changes have been introduced since the last update.")
         cli.info("Please update all URLAccessFields to the new WebAccessFields")
         cli.info("When you are done, set the config_version in the config to 1.")
