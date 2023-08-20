@@ -118,7 +118,7 @@ class Source:
             lowest = newest
             for version in new_compatibility:
                 version_obj = Version(version)
-                if version_obj.is_lower(lowest):
+                if version_obj.is_lower(lowest) and not version_obj.matches(Version("1.1.0")):  # 1.1.0 = version not parsed
                     lowest = version_obj
             maxed_newest = newest
             if self.config["compatibility"]["behaviour"].endswith("|major"):
