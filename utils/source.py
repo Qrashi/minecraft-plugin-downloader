@@ -21,7 +21,8 @@ from .io import abs_filename
 from .tasks import execute
 from .versions import Version, VersionRangeRequirement
 
-SOURCES_DIR = load("data/config.json", default=CONFIG).json["sources_folder"]
+config = load("data/config.json", default=CONFIG).json
+SOURCES_DIR = config["sources_folder"]
 
 
 class Source:
@@ -81,6 +82,8 @@ class Source:
         Check for updates to software compatibility
         :return:
         """
+        if config["debug"]:
+            cli.info(f"checking compatibility of {self.name}")
         context.task = "updating compatibility"
         new_compatibility = WebAccessField(self.config["compatibility"]["remote"]).execute(self.replaceable, headers=self.headers)
         if isinstance(new_compatibility, Exception):

@@ -27,7 +27,7 @@ def get_managed(url: str, headers: dict) -> Union[Dict, List, str, int, float, b
         return requests[url]
     try:
         if config["debug"]:
-            cli.info(f"fetching url {url}")
+            cli.info(f"fetching url {url} - {context.name}")
         request = get(url, headers=headers)
     except Exception as e:
         report(context.failure_severity, f"WebManager - {context.name} - {context.task}",
