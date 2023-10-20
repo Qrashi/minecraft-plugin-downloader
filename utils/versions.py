@@ -18,6 +18,7 @@ from utils.file_defaults import CONFIG, VERSIONS
 from utils.static_info import DAYS_SINCE_EPOCH
 
 versions = load("data/versions.json", default=VERSIONS).json
+config = load("data/config.json", default=CONFIG).json
 
 
 def report_malformed_version(version: str, verbose: bool = True) -> bool:
@@ -128,6 +129,9 @@ class Version:
         else:
             self.major = str(version[0])
             self.minor = str(version[1])
+        if config["debug"]:
+            cli.info(f"Version {version} was parsed as version {self.string()}")
+
 
     def string(self) -> str:
         """
