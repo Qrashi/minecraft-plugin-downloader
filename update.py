@@ -62,6 +62,13 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
         config["config_version"] = 2
         cli.success("configurations updated to version 2.")
 
+    if config["config_version"] == 2:
+        cli.info("updating configurations...")
+        if "debug" not in config:
+            config["debug"] = False
+        config["config_version"] = 3
+        cli.success("configurations updated to version 3.")
+
     context.task = "checking for git-updates"
     if config["git_auto_update"]:
         cli.update_sender("GIT")

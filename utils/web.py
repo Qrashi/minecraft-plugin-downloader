@@ -2,12 +2,17 @@
 manage web requests
 """
 from typing import Dict, List, Union
+from singlejson import load
 
 from requests import get
 
+import utils.cli as cli
+from utils.file_defaults import CONFIG
 from .context_manager import context
 from .errors import report
 
+
+config = load("data/config.json", default=CONFIG).json
 requests: Dict[str, Union[Dict, List, str, int, float, bool, None]] = {}
 
 
@@ -21,6 +26,8 @@ def get_managed(url: str, headers: dict) -> Union[Dict, List, str, int, float, b
     if url in requests:
         return requests[url]
     try:
+        if config["debug"]:
+            cli.info(f"fetching url {url}")
         request = get(url, headers=headers)
     except Exception as e:
         report(context.failure_severity, f"WebManager - {context.name} - {context.task}",
