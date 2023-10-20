@@ -74,7 +74,6 @@ def from_string(version: str, verbose: bool = True) -> tuple[str, str]:
     :param version: Version to split
     :return: a tuple with both the minor and major version as a strings
     """
-    version = version.replace("-pre", "")
     if is_valid(version, verbose=verbose):
         if len(version) <= 3:
             major = version[2]  # We only take the 9 from 1.9
@@ -130,7 +129,7 @@ class Version:
             self.major = str(version[0])
             self.minor = str(version[1])
         if config["debug"]:
-            cli.info(f"Version {version} was parsed as version {self.string()}")
+            cli.info(f"Version {version} was parsed as version {self.string()} - {context.name}")
 
 
     def string(self) -> str:
