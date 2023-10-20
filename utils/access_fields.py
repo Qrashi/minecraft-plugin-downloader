@@ -10,6 +10,7 @@ from singlejson import load
 
 from utils.versions import Version
 from utils.web import get_managed
+from utils.versions import is_valid
 
 
 class FileAccessField:
@@ -143,7 +144,7 @@ class WebAccessField:
         for task in self.tasks:
             if "type" not in task:
                 task["type"] = "get_return"
-            if task["type"] == "get_return":
+            if task["type"] == "get_return" or task["type"] == "get_return_clean":
                 # Integrity check
                 if not all(x in list(task) for x in ["url", "path"]):
                     report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
@@ -156,6 +157,18 @@ class WebAccessField:
                 result = get_managed(self.replace(task["url"]), task_headers)
                 if isinstance(result, Exception):
                     return result
+                if task["type"] == "get_return_clean":
+                    result = uri_access(task["path"], result)
+                    if type(result) is not list:
+                        report(context.failure_severity, f"WebAccessField - {context.name} - {context.task}",
+                               "malformed information received for get_return_clean task. object to clean is not of type list",
+                               additional=f"task data: {task}", software=context.name)
+                        return WebAccessFieldError("malformed object recieved for get_return_clean task, not of type list")
+                    passing_versions = []
+                    for element in result:
+                        if not Version(element, verbose=False).matches(Version("1.1.0")):
+                            passing_versions.append(element)
+                    return passing_versions
                 return uri_access(task["path"], result)
             if task["type"] == "get_store":
                 if not all(x in list(task) for x in ["url", "path", "destination"]):

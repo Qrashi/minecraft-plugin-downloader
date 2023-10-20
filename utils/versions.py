@@ -56,25 +56,25 @@ def is_valid(version: str, verbose: bool = True) -> bool:
 
     version = str(version)
     if len(version) > 7:  # Longer than 1.17.77 (6)
-        if verbose: report_malformed_version(version)
+        if verbose: report_malformed_version(version, verbose=verbose)
         return False
     if len(version) < 3:  # Shorter than 1.1 (3)#
-        if verbose: report_malformed_version(version)
+        if verbose: report_malformed_version(version, verbose=verbose)
         return False
     if version[:2] != "1.":  # Minecraft 2.x when?
-        if verbose: report_malformed_version(version)
+        if verbose: report_malformed_version(version, verbose=verbose)
         return False
     return True
 
 
-def from_string(version: str) -> tuple[str, str]:
+def from_string(version: str, verbose: bool = True) -> tuple[str, str]:
     """
     Split major and minor versions into two strings
     :param version: Version to split
     :return: a tuple with both the minor and major version as a strings
     """
     version = version.replace("-pre", "")
-    if is_valid(version):
+    if is_valid(version, verbose=verbose):
         if len(version) <= 3:
             major = version[2]  # We only take the 9 from 1.9
             if len(version) > 3:  # Has minor version because major is at least (1.9)
@@ -115,13 +115,13 @@ class Version:
     A minecraft version
     """
 
-    def __init__(self, version: Union[str, Tuple[Union[int, str], Union[int, str]], Dict[str, int]]):
+    def __init__(self, version: Union[str, Tuple[Union[int, str], Union[int, str]], Dict[str, int]], verbose: bool = True):
         """
         Initialize a new version object
         :param version: version to construct
         """
         if type(version) is str:
-            self.major, self.minor = from_string(version)
+            self.major, self.minor = from_string(version, verbose=verbose)
         elif type(version) is dict:
             self.major = version["major"].replace("1.", "")
             self.minor = version["minor"].replace(".", "")

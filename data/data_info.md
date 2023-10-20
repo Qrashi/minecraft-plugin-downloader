@@ -99,6 +99,13 @@ This is a little documentation for the data structures used in these scripts:
             url: "url",
             path: {URIAccessField to retrieve the correct JSON data},
             headers: {optional}
+        
+            * get_return_clean:
+                Get information from the web (specifically game versions) and remove everything except game versions.
+                It essentially acts like a non-verbose "get-return". Might be reworked in the future.
+            url: "url",
+            path: {URIAccessField to retrieve a list of versions to be cleaned},
+            headers: {optional}
         }
       ```
       * If you only want to return a string (for example when you need to return the URL to download the newest artifact) you can just put a string as a valid WebAccessField
