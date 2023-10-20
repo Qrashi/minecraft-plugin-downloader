@@ -87,7 +87,7 @@ def uri_access(path: List[str], json: dict):
         except Exception as e:
             report(context.failure_severity, f"URIAccessField - {context.name} - {context.task}",
                    "Could not access json property, some error occurred.",
-                   additional=f"given data: {json} ; accessing f{path};\n trying to access f{attribute} in f{data}",
+                   additional=f"given data: {json} ; accessing {path};\n trying to access {attribute} in {data}",
                    exception=e, software=context.name)
             return None
     return data
