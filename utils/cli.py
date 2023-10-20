@@ -138,7 +138,7 @@ def print_pretty(color: str, symbol: str, message: str, vanish: bool, enable_len
     if len(message) + 8 > terminal_size and enable_len_check:
         # WON'T FIT IN ONE LINE
         message = cut_string(message, terminal_size - 8)
-    print('\r\x1b[2K\r\r\x1b[2K\r' + color + symbol + sender.get_sender() + color + " " + message, end=end + Style.RESET_ALL)
+    print('\r\x1b[2K\r' + color + symbol + sender.get_sender() + color + " " + message, end=end + Style.RESET_ALL)
 
 
 def update_sender(new_sender: str):
