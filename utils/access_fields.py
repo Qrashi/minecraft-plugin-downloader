@@ -166,7 +166,7 @@ class WebAccessField:
                         return WebAccessFieldError("malformed object recieved for get_return_clean task, not of type list")
                     passing_versions = []
                     for element in result:
-                        if not Version(element, verbose=False).matches(Version("1.1.0")):
+                        if not Version(element, verbose=False).matches(Version.default):
                             passing_versions.append(element)
                     return passing_versions
                 return uri_access(task["path"], result)
@@ -246,11 +246,11 @@ class WebAccessField:
                            software=context.name)
                     return WebAccessFieldError(
                         "error while executing \"" + task["type"] + "\" task. list of objects specified by path is not a list")
-                current_highest: Tuple[int, Union[Version, int]] = (0, Version("1.1.0") if task["sort_type"] == "game_version" else 0)
+                current_highest: Tuple[int, Union[Version, int]] = (0, Version.default if task["sort_type"] == "game_version" else 0)
                 for object_index, sortable_object in enumerate(sortable_data):
                     if task["sort_type"] == "game_version":
                         current = Version(uri_access(task["sort_by"], sortable_object))
-                        if current.is_higher(current_highest[1]) or current_highest[1].matches(Version("1.1.0")):
+                        if current.is_higher(current_highest[1]) or current_highest[1].matches(Version.default):
                             current_highest = (object_index, current)
                         continue
                     if task["sort_type"] == "number":
@@ -259,7 +259,7 @@ class WebAccessField:
                             current_highest = (object_index, current)
                         continue
                     if task["sort_type"] == "first_release":
-                        if not Version(uri_access(task["sort_by"], sortable_object)).matches(Version("1.1.0")):  # Not a snapshot
+                        if not Version(uri_access(task["sort_by"], sortable_object)).matches(Version.default):  # Not a snapshot
                             current_highest = (object_index, 0)
                             break
                         continue
