@@ -20,7 +20,7 @@ from utils.tasks import execute
 from utils.versions import Version, check_game_versions
 
 
-def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_check: bool):
+def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_check: bool, debug_arg: bool):
     """
     Execute the main update.
     :param check_all_compatibility: Weather to check all software for updates
@@ -68,6 +68,12 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
             config["debug"] = False
         config["config_version"] = 3
         cli.success("configurations updated to version 3.")
+
+    if debug_arg:
+        reset_debug = not config["debug"]
+        if reset_debug:
+            config["debug"] = True
+
 
     context.task = "checking for git-updates"
     if config["git_auto_update"]:
@@ -310,13 +316,15 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
         progress.complete(f"Checked {len(servers.json)} servers for updates.")
 
     cli.update_sender("END")
+    if debug_arg and reset_debug:
+        config["debug"] = False
     cli.simple_wait_fixed_time("Saving data to disk...", "Data saved!", 1.5, green=True)
     sync()
 
 
 if __name__ == "__main__":
     try:
-        main(args.check_all_compatibility, args.redownload, args.skip_dependency_check)
+        main(args.check_all_compatibility, args.redownload, args.skip_dependency_check, args.debug)
     except KeyboardInterrupt:
         cli.fail("operation aborted, no data saved!")
         cli.fail(f"{context.name} - {context.task}")
