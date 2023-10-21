@@ -326,8 +326,7 @@ def check_game_versions():
                     highest = version
         else:
             version = Version(retrieved_version_data)
-            if version.matches(Version.default)
-            if version.string() not in versions["versions"]:
+            if version.string() not in versions["versions"] and version.matches(Version.default):
                 versions["versions"].append(version.string())
                 updated = True
                 if version.is_higher(current_highest):
