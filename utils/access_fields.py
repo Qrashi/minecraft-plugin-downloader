@@ -8,7 +8,7 @@ from utils.context_manager import context
 from utils.file_defaults import CONFIG
 from singlejson import load
 
-from utils.versions import Version
+from utils.versions import Version, DEFAULT_VERSION
 from utils.web import get_managed
 from utils.versions import is_valid
 
@@ -166,7 +166,7 @@ class WebAccessField:
                         return WebAccessFieldError("malformed object recieved for get_return_clean task, not of type list")
                     passing_versions = []
                     for element in result:
-                        if not Version(element, verbose=False).matches(Version.default):
+                        if not Version(element, verbose=False).matches(DEFAULT_VERSION):
                             passing_versions.append(element)
                     return passing_versions
                 return uri_access(task["path"], result)
@@ -246,11 +246,11 @@ class WebAccessField:
                            software=context.name)
                     return WebAccessFieldError(
                         "error while executing \"" + task["type"] + "\" task. list of objects specified by path is not a list")
-                current_highest: Tuple[int, Union[Version, int]] = (0, Version.default if task["sort_type"] == "game_version" else 0)
+                current_highest: Tuple[int, Union[Version, int]] = (0, DEFAULT_VERSION if task["sort_type"] == "game_version" else 0)
                 for object_index, sortable_object in enumerate(sortable_data):
                     if task["sort_type"] == "game_version":
                         current = Version(uri_access(task["sort_by"], sortable_object))
-                        if current.is_higher(current_highest[1]) or current_highest[1].matches(Version.default):
+                        if current.is_higher(current_highest[1]) or current_highest[1].matches(DEFAULT_VERSION):
                             current_highest = (object_index, current)
                         continue
                     if task["sort_type"] == "number":
@@ -259,7 +259,7 @@ class WebAccessField:
                             current_highest = (object_index, current)
                         continue
                     if task["sort_type"] == "first_release":
-                        if not Version(uri_access(task["sort_by"], sortable_object)).matches(Version.default):  # Not a snapshot
+                        if not Version(uri_access(task["sort_by"], sortable_object)).matches(DEFAULT_VERSION):  # Not a snapshot
                             current_highest = (object_index, 0)
                             break
                         continue

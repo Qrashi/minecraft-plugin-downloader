@@ -26,6 +26,7 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
     :param check_all_compatibility: Weather to check all software for updates
     :param re_download: Weather to re-download a specific software
     :param skip_dependency_check: Skip checking for new dependencies
+    :param debug_arg: Weather the debug command line argument has been set
     :return:
     """
     context.name = "main"

@@ -19,7 +19,7 @@ from .file_defaults import CONFIG
 from singlejson import load
 from .io import abs_filename
 from .tasks import execute
-from .versions import Version, VersionRangeRequirement
+from .versions import Version, VersionRangeRequirement, DEFAULT_VERSION
 
 config = load("data/config.json", default=CONFIG).json
 SOURCES_DIR = config["sources_folder"]
@@ -121,7 +121,7 @@ class Source:
             lowest = newest
             for version in new_compatibility:
                 version_obj = Version(version)
-                if version_obj.is_lower(lowest) and not version_obj.matches(Version.default):  # 1.1.0 = version not parsed
+                if version_obj.is_lower(lowest) and not version_obj.matches(DEFAULT_VERSION):  # 1.1.0 = version not parsed
                     lowest = version_obj
             maxed_newest = newest
             if self.config["compatibility"]["behaviour"].endswith("|major"):

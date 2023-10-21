@@ -109,14 +109,11 @@ def _int(string: str):
         return 0
     return int(string)
 
-_not_found_version: Version = None
-
 
 class Version:
     """
     A minecraft version
     """
-    default = _not_found_version
 
     def __init__(self, version: Union[str, Tuple[Union[int, str], Union[int, str]], Dict[str, int]], verbose: bool = True):
         """
@@ -216,6 +213,8 @@ class Version:
             requirement.minimum)  # Is True if MY version is lower than the maximum and MY version is higher than the minimum
 
 
+DEFAULT_VERSION = Version("1.1.0")
+
 class VersionRangeRequirement:
     """
     A Version requirement
@@ -285,7 +284,6 @@ def check_game_versions():
     Check for new game versions
     :return:
     """
-    _not_found_version = Version.default
     from utils.access_fields import WebAccessField
     context.task = "checking for new game versions"
     context.failure_severity = 3
@@ -317,7 +315,7 @@ def check_game_versions():
         if type(retrieved_version_data) is list:
             for version in retrieved_version_data:
                 version = Version(version)
-                if version.matches(Version.default):
+                if version.matches(DEFAULT_VERSION):
                     continue
                 if version.string() not in versions["versions"]:
                     versions["versions"].append(version.string())
@@ -326,7 +324,7 @@ def check_game_versions():
                     highest = version
         else:
             version = Version(retrieved_version_data)
-            if version.string() not in versions["versions"] and version.matches(Version.default):
+            if version.string() not in versions["versions"] and version.matches(DEFAULT_VERSION):
                 versions["versions"].append(version.string())
                 updated = True
                 if version.is_higher(current_highest):
