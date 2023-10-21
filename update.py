@@ -113,7 +113,7 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
                     os.execl(sys.executable, sys.executable, *sys.argv)
 
     # Update software (fetch sources)
-    context.task = "checking for new software updates"
+    context.task = "checking for new software updates / loading software configurations"
     cli.update_sender("SFW")
     check_re_download = re_download is not None
     update_all = False if not check_re_download else re_download[0].lower() == "all"
@@ -142,6 +142,7 @@ def main(check_all_compatibility: bool, re_download: List[str], skip_dependency_
     else:
         progress.complete(f"Found {updated} updates, checked {total_software}")
 
+    context.name = "main"
     # Update servers
     cli.update_sender("SRV")
     servers_total = len(servers.json)

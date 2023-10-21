@@ -28,6 +28,7 @@ class Software:
         :param software: Software data
         :param name: name of software
         """
+        context.name = name
         self.name = name
         if self.has_source():
             self.source = Source(name)
